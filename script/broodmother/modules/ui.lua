@@ -1,5 +1,7 @@
 local ui_obj = {
-    panel_name = "broodmothers_panel"
+    panel_name = "broodmothers_panel",
+
+    listener_names = {},
 }
 
 function ui_obj:delete_component(uic)
@@ -23,6 +25,42 @@ function ui_obj:delete_component(uic)
     end
 
     dummy:DestroyChildren()
+end
+
+function ui_obj:clear_listeners()
+    for i = 1, #self.listener_names do
+        core:remove_listener(self.listener_names[i])
+    end
+
+    self.listener_names = {}
+end
+
+function ui_obj:add_listener(listener_name)
+    if not is_string(listener_name) then
+        -- errmsg
+        return false
+    end
+
+    self.listener_names[#self.listener_names+1] = listener_name
+end
+
+function ui_obj:open_frame()
+    local panel = find_uicomponent(self.panel_name)
+
+    if not is_uicomponent(panel) then
+        -- create one
+        self:create_panel()
+    else
+        panel:SetVisible(true)
+    end
+end
+
+function ui_obj:close_frame()
+    local panel = find_uicomponent(self.panel_name)
+
+    self:delete_component(panel)
+
+    self:clear_listeners()
 end
 
 function ui_obj:create_panel()
@@ -49,7 +87,7 @@ function ui_obj:create_panel()
     find_uicomponent(panel, "dropdown_quality"):SetVisible(false)
 
     -- create the close button
-    local close_button_uic = core:get_or_create_component("button_mct_close", "ui/templates/round_medium_button", panel)
+    local close_button_uic = core:get_or_create_component("button_close", "ui/templates/round_medium_button", panel)
     local img_path = effect.get_skinned_image_path("icon_cross.png")
     close_button_uic:SetImagePath(img_path)
     close_button_uic:SetTooltipText("Close panel", true)
@@ -57,6 +95,20 @@ function ui_obj:create_panel()
     -- bottom center
     close_button_uic:SetDockingPoint(8)
     close_button_uic:SetDockOffset(0, -5)
+
+    -- close button functionality
+    self:add_listener("close_broodmama")
+    core:add_listener(
+        "close_broodmama",
+        "ComponentLClickUp",
+        function(context)
+            return context.string == "button_close"
+        end,
+        function(context)
+            self:close_frame()
+        end,
+        false
+    )
 
     -- get the width and height of the main background image, not including the title and the bottom bar.
     -- needed for the individual columns n' stuff
@@ -203,11 +255,32 @@ function ui_obj:create_panel()
             category_uic:SetDockingPoint(5)
             category_uic:SetDockOffset(0, 0)
 
-            category_uic:SetState("active")
+            local states_to_current_state_images = {
+                ["active"] = {0, 1, 2},
+                ["down"] = {0, 1},
+                ["down_off"] = {0},
+                ["hover"] = {0, 1, 2},
+                ["inactive"] = {0},
+                ["selected"] = {0, 1, 2},
+                ["selected_down"] = {0, 1},
+                ["selected_down_off"] = {0},
+                ["selected_hover"] = {0, 1, 2},
+                ["selected_inactive"] = {0},
+            }
 
-            category_uic:ResizeCurrentStateImage(0, new_width, new_height)
-            category_uic:ResizeCurrentStateImage(1, new_width, new_height)
-            category_uic:ResizeCurrentStateImage(2, new_width, new_height)
+            ModLog("in category ["..category_key.."]")
+            for state, image_table in pairs(states_to_current_state_images) do
+                ModLog("setting state: "..state)
+                category_uic:SetState(state)
+
+                for x = 1, #image_table do
+                    ModLog("in loop ["..tostring(x).."]")
+                    local image_index = image_table[x]
+                    category_uic:ResizeCurrentStateImage(image_index, new_width, new_height)
+                end
+            end
+
+            category_uic:SetState("active")
 
             local dummy_row = core:get_or_create_component(category_key.."_row", "ui/vandy_lib/script_dummy", list_box)
 
@@ -246,6 +319,7 @@ function ui_obj:create_panel()
 
             dummy_row:SetVisible(false)
 
+            self:add_listener("cat_pressed")
             core:add_listener(
                 "cat_pressed",
                 "ComponentLClickUp",
@@ -301,7 +375,7 @@ function ui_obj:create_panel()
 
         button_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.7)
 
-        local index = 4
+        local index = 5
 
         local parent_height = button_holder:Height()
         local parent_width = button_holder:Width()
@@ -310,20 +384,36 @@ function ui_obj:create_panel()
         local h_gap = 0
         local all_button_height = 0
 
+        local i_to_image_paths = {
+            {"ui/broodmother/Broodmama_option_eshin.png"},
+            {"ui/broodmother/Broodmama_option_moulder.png"},
+            {"ui/broodmother/Broodmama_option_pestilens.png"},
+            {"ui/broodmother/Broodmama_option_skryre.png"},
+            {"ui/broodmother/Broodmama_option_static.png", "ui/broodmother/Broodmama_option_selected.png", "ui/broodmother/Broodmama_option_hover.png"},
+        }
+
         for i = 1, index do
             local broodmother_key = "broodmother_"..tostring(i)
 
             local broodmother_uic = core:get_or_create_component(broodmother_key, "ui/templates/round_extra_large_button", button_holder)
+     
+            broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png")
 
-            broodmother_uic:SetImagePath("ui/skins/default/advisor_beastmen_2d.png")
+            -- overwrite the "active" image 
+            broodmother_uic:SetImagePath(i_to_image_paths[i][1], 3)
+
+            if i_to_image_paths[i][2] then
+                broodmother_uic:SetImagePath(i_to_image_paths[i][2], 1)
+                broodmother_uic:SetImagePath(i_to_image_paths[i][3], 2)
+            end
 
             local height = broodmother_uic:Height()
 
             if h_gap == 0 then
-                all_button_height = height * 4
+                all_button_height = height * index
 
                 local remaining_height = parent_height - all_button_height
-                h_gap = remaining_height / 5
+                h_gap = remaining_height / (index + 1)
                 h_pos = h_gap
             else
                 h_pos = h_gap * i + (height * (i - 1))
@@ -354,6 +444,8 @@ function ui_obj:create_panel()
             text:SetDockingPoint(5)
             text:SetDockOffset(0, 0)
         
+            local w,h = text:TextDimensionsForText("Traits Go Here!")
+            text:ResizeTextResizingComponentToInitialSize(w,h)
             text:SetStateText("Traits Go Here!")
         end
     end

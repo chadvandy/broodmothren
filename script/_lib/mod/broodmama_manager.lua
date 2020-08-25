@@ -8,6 +8,8 @@ local broodmama_manager = {
     module_filepath = "script/broodmother/modules/",
     _logpath = "broodmother.txt",
 
+    write_to_log = true,
+
     broodmothers = {}
 }
 
@@ -119,6 +121,24 @@ core:add_static_object("broodmother_manager", broodmama_manager, false)
 
 _G.get_broodmother_manager = get_broodmother_manager
 
+broodmama_manager:init()
+
+function broodmama_manager:get_broodmothers()
+    return self.broodmothers
+end
+
+function broodmama_manager:get_broodmothers_for_faction(faction_key)
+    local blist = self.broodmothers
+
+    local retval = {}
+    
+    for i = 1, #blist do
+        local broodmother_obj = blist[i]
+        if broodmother_obj:get_faction_key() == faction_key then
+            retval[#retval+1] = broodmother_obj
+        end
+    end
+end
 
 function broodmama_manager:create_new_broodmother(owning_faction, region_key)
     if not is_string(owning_faction) then
@@ -137,7 +157,6 @@ function broodmama_manager:create_new_broodmother(owning_faction, region_key)
 
     self.broodmothers[#self.broodmothers+1] = new_broodmother
 end
-
 
 -- this is called on the beginning of every new game.
 -- create new broodmothers in all Skaven factions
