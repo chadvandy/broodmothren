@@ -1,3 +1,5 @@
+local bmm = broodmama_manager
+
 -- this is all the data held by a single "broodmother" object.
 
 local broodmother_obj = {
@@ -10,12 +12,34 @@ local broodmother_obj = {
 function broodmother_obj.new(faction_key, region_key)
     local new_broodmother = {}
 
-    setmetatable(new_broodmother, {__index = new_broodmother})
+    setmetatable(new_broodmother, {__index = broodmother_obj})
 
     new_broodmother.faction_key = faction_key
     new_broodmother.location = region_key
+    new_broodmother.traits = {}
+
+    new_broodmother.index = bmm:get_next_unique_counter()
 
     return new_broodmother
+end
+
+function broodmother_obj:get_index()
+    return self.index
+end
+
+function broodmother_obj:add_trait(trait_key)
+    if not is_string(trait_key) then
+        bmm:error("add_trait called on a broodmother, but the trait key wasn't a string!")
+        return false
+    end
+
+    -- TODO check if there's max traits?
+    -- TODO check if there's a conflicting trait?
+    self.traits[#self.traits+1] = trait_key
+end
+
+function broodmother_obj:get_traits()
+    return self.traits
 end
 
 function broodmother_obj:change_location(new_region_key)
