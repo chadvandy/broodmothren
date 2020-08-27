@@ -126,15 +126,226 @@ function ui_obj:create_left_column()
         bottom_text:SetStateText("[[col:fe_white]]My Flavour Text[[/col]]")
     end
 
-    -- create the listview in the center of the parchment
+    -- create the category holder in the center of the parchment
 
     -- get the remaining height available in the left column; -10 is for a 5px margin on top and bottom
     local remaining_height = dummy:Height() - bottom_text_bg:Height() - title:Height() - 10
 
-    -- set the listview to -20 of the dummy, again for 10px margins on left/right
+    -- set the holder to -20 of the dummy, again for 10px margins on left/right
     local remaining_width = dummy:Width() - 20
 
-    local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", dummy)
+    local categories_holder = core:get_or_create_component("categories_holder", "ui/vandy_lib/script_dummy", dummy)
+    categories_holder:SetDockingPoint(2)
+    categories_holder:SetDockOffset(0, title:Height() + 5)
+
+    categories_holder:Resize(remaining_width, remaining_height)
+
+    local categories = {
+        "bigger_broodmothers",
+        "careful_caretakers",
+        "clever_concoctions",
+        "improved_incubators",
+    }
+
+    local i_to_docking_point = {
+        [1] = 1, -- top left
+        [2] = 3, -- top right
+        [3] = 7, -- bottom left
+        [4] = 9, -- bottom right
+    }
+
+    local categories_to_actions = {
+        bigger_broodmothers = {
+            actions = {
+                "feed",
+                "move",
+                "starve",
+            },
+            upgrades = {
+                "less_bones",
+                "more_protein",
+                "secret_ingredient",
+            }
+        },
+
+        careful_caretakers = {
+            actions = {
+                "eat",
+                "enslave",
+                "militarize",
+            },
+            upgrades = {
+                "extra_workers",
+                "overseers",
+                "training",
+            },
+        },
+        clever_concoctions = {
+            actions = {
+                "heal",
+                "observe",
+                "experiment",
+            },
+            upgrades = {
+                "growth_stimulants",
+                "teeming_tonics",
+                "healing_potions",
+            },
+        },
+        improved_incubators = {
+            actions = {
+                "quick",
+                "planning",
+                "engineer",
+            },
+            upgrades = {
+                "tunnels",
+                "warrens",
+                "incubators",
+            },
+        },
+    }
+
+    local img_start = "ui/broodmother/rhm2_"
+    local category_to_img_key = {
+        bigger_broodmothers = "diet",
+        careful_caretakers = "care",
+        clever_concoctions = "research",
+        improved_incubators = "infrastructure",
+    }
+    local img_end = "_icon.png"
+
+    local index_to_image = {
+        [1] = "pressed",
+        [2] = "hover",
+        [3] = "active",
+        [4] = "inactive",
+        [5] = "underlay",
+    }
+
+    local colors = {
+        "yellow",
+        "weapon",
+        "purple",
+        "orange",
+        "green",
+        "blue",
+        "flask",
+        "bag",
+        "arrow",
+        "bag",
+        "armour",
+    }
+
+    -- loop through and create each individual category header
+    for i = 1, #categories do
+        local category_key = categories[i]
+        local category_image_path = "ui/broodmother/category_"..category_key..".png"
+        local docking_point_for_i = i_to_docking_point[i]
+
+        -- create the positioning component to hold everything for this category
+        local category_holder = core:get_or_create_component(category_key.."_holder", "ui/vandy_lib/script_dummy", categories_holder)
+
+        -- make it a rough rectangle set on one of the four corners
+        category_holder:Resize(categories_holder:Width() * 0.48, categories_holder:Height() * 0.48)
+        category_holder:SetDockingPoint(docking_point_for_i)
+        category_holder:SetDockOffset(0, 0)
+
+        -- create the image for the category
+        local category_uic = core:get_or_create_component(category_key..
+        "_img", "ui/templates/custom_image", category_holder)
+        category_uic:SetState("custom_state_1")
+        category_uic:SetImagePath(category_image_path)
+        category_uic:SetVisible(true)
+
+        local new_w = category_holder:Width() * 0.95
+        local new_h = new_w / 3
+
+        category_uic:SetCanResizeWidth(true) category_uic:SetCanResizeHeight(true)
+        category_uic:Resize(new_w, new_h)
+        category_uic:SetCanResizeWidth(false) category_uic:SetCanResizeHeight(false)
+
+        category_uic:SetDockingPoint(2)
+        category_uic:SetDockOffset(0, 5)
+
+        local holder = core:get_or_create_component("holder", "ui/vandy_lib/script_dummy", category_holder)
+        holder:SetDockingPoint(2)
+        holder:SetDockOffset(0, category_uic:Height() + 5)
+        holder:Resize(category_holder:Width(), category_holder:Height() - category_uic:Height())
+
+        local actions = categories_to_actions[category_key]["actions"]
+        local upgrades = categories_to_actions[category_key]["upgrades"]
+
+        local actions_holder = core:get_or_create_component("actions_holder", "ui/vandy_lib/script_dummy", holder)
+        actions_holder:SetDockingPoint(2)
+        actions_holder:SetDockOffset(0, 0)
+        actions_holder:Resize(holder:Width(), holder:Height() * 0.49)
+
+        local pos = 4
+        for j = 1, 3 do
+            local action_key = actions[j]
+
+            local action_holder = core:get_or_create_component("action_holder_"..tostring(j), "ui/vandy_lib/script_dummy", actions_holder)
+            action_holder:SetDockingPoint(pos) 
+            pos = pos + 1
+            action_holder:SetDockOffset(0, 0)
+            action_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
+
+            local action_uic = core:get_or_create_component(action_key, "ui/templates/square_medium_button", action_holder)
+            action_uic:SetDockingPoint(5)
+            action_uic:SetDockOffset(0, 0)
+
+            local img_path = img_start .. category_to_img_key[category_key] .. "_" .. action_key .. img_end
+            action_uic:SetImagePath(img_path)
+
+            -- TODO testing colours :)
+            local random_colour_index = cm:random_number(#colors or 1, 1)
+            local random_colour = colors[random_colour_index]
+            table.remove(colors, random_colour_index)
+            if random_colour then
+                for x = 1, #index_to_image do
+                    local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
+                    action_uic:SetImagePath(str, x)
+                end
+            end
+        end
+
+        local upgrades_holder = core:get_or_create_component("upgrades_holder", "ui/vandy_lib/script_dummy", holder)
+        upgrades_holder:SetDockingPoint(8)
+        upgrades_holder:SetDockOffset(0, 0)
+        upgrades_holder:Resize(holder:Width(), holder:Height() * 0.49)
+
+        local new_pos = 4
+        for j = 1, 3 do
+            local upgrade_key = upgrades[j]
+
+            local upgrade_holder = core:get_or_create_component("upgrade_holdeR_"..tostring(j), "ui/vandy_lib/script_dummy", upgrades_holder)
+            upgrade_holder:SetDockingPoint(pos) 
+            pos = pos + 1
+            upgrade_holder:SetDockOffset(0, 0)
+            upgrade_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
+
+            local upgrade_uic = core:get_or_create_component(upgrade_key, "ui/templates/square_medium_button", upgrade_holder)
+            upgrade_uic:SetDockingPoint(5)
+            upgrade_uic:SetDockOffset(0, 0)
+
+            local img_path = img_start .. category_to_img_key[category_key] .. "_" .. upgrade_key .. img_end
+            upgrade_uic:SetImagePath(img_path)
+
+            -- TODO testing colours :)
+            local random_colour_index = cm:random_number(#colors or 1, 1)
+            local random_colour = colors[random_colour_index]
+            table.remove(colors, random_colour_index)
+            if random_colour then
+                for x = 1, #index_to_image do
+                    local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
+                    upgrade_uic:SetImagePath(str, x)
+                end
+            end
+        end
+    end
+
+    --[[local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", dummy)
     list_view:SetDockingPoint(2)
     list_view:SetDockOffset(10, title:Height() + 5)
 
@@ -235,9 +446,6 @@ function ui_obj:create_left_column()
 
                     category_uic:SetState(state)
 
-                    --[[core:add_listener(
-                        "internal_stupid_loop"
-                    )]]
 
                     for x = 1, #image_table do
                         local image_index = image_table[x]
@@ -322,7 +530,7 @@ function ui_obj:create_left_column()
         )
     end
 
-    list_box:Layout()
+    list_box:Layout()]]
 end
 
 function ui_obj:create_center_column()
