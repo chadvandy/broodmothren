@@ -69,18 +69,28 @@ function ui_obj:create_left_column()
     local panel = find_uicomponent(self.panel_name)
     local left_column = find_uicomponent(panel, "left_column")
 
-    local img_path = effect.get_skinned_image_path("parchment_texture.png")
+    local img_path = effect.get_skinned_image_path("fe_plaque.png")
 
     -- left column, background is a current dummy
     local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", left_column)
     dummy:SetVisible(true)
-    dummy:SetState('custom_state_2')
-    dummy:SetImagePath(img_path, 1)
+    dummy:SetState("custom_state_2")
+    dummy:SetImagePath("ui/skins/warhammer2/panel_back_top.png", 1)
     dummy:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
     dummy:Resize(left_column:Width(), left_column:Height())
 
     dummy:SetDockingPoint(5)
     dummy:SetDockOffset(0, 0)
+
+    local border = core:get_or_create_component("border", "ui/vandy_lib/custom_image_tiled", dummy)
+    border:SetVisible(true)
+    border:SetState('custom_state_2')
+    border:SetImagePath("ui/skins/warhammer2/panel_back_frame.png", 1)
+    border:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
+    border:Resize(left_column:Width(), left_column:Height())
+
+    border:SetDockingPoint(5)
+    border:SetDockOffset(0, 0)
 
     -- plop in the title track
     local title = core:get_or_create_component("title", "ui/templates/panel_subtitle", dummy)
@@ -111,7 +121,7 @@ function ui_obj:create_left_column()
     bottom_text_bg:Resize(dummy:Width() * 0.95, dummy:Height() * 0.15)
 
     bottom_text_bg:SetDockingPoint(8)
-    bottom_text_bg:SetDockOffset(0, 0)
+    bottom_text_bg:SetDockOffset(0, -15)
 
     local bottom_text = core:get_or_create_component("flavour_text", "ui/vandy_lib/text/la_gioconda", bottom_text_bg)
     bottom_text:SetVisible(true)
@@ -128,8 +138,8 @@ function ui_obj:create_left_column()
 
     -- create the category holder in the center of the parchment
 
-    -- get the remaining height available in the left column; -10 is for a 5px margin on top and bottom
-    local remaining_height = dummy:Height() - bottom_text_bg:Height() - title:Height() - 10
+    -- get the remaining height available in the left column; -25 is for a 5px margin on top and bottom (and the -15 offset for the bottom background)
+    local remaining_height = dummy:Height() - bottom_text_bg:Height() - title:Height() - 25
 
     -- set the holder to -20 of the dummy, again for 10px margins on left/right
     local remaining_width = dummy:Width() - 20
@@ -281,6 +291,9 @@ function ui_obj:create_left_column()
         actions_holder:SetDockOffset(0, 0)
         actions_holder:Resize(holder:Width(), holder:Height() * 0.49)
 
+        local first = true
+        local second = false
+
         local pos = 4
         for j = 1, 3 do
             local action_key = actions[j]
@@ -291,15 +304,36 @@ function ui_obj:create_left_column()
             action_holder:SetDockOffset(0, 0)
             action_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
 
-            local action_uic = core:get_or_create_component(action_key, "ui/templates/square_medium_button", action_holder)
+            local action_uic = core:get_or_create_component(action_key, "ui/vandy_lib/buildingframe", action_holder)
             action_uic:SetDockingPoint(5)
             action_uic:SetDockOffset(0, 0)
 
+            action_uic:SetState("built_panel")
+            action_uic:SetTooltipText("", true)
+
             local img_path = img_start .. category_to_img_key[category_key] .. "_" .. action_key .. img_end
             action_uic:SetImagePath(img_path)
+            
+            if first then
+                for z = 1, action_uic:ChildCount() -1 do
+                    local child = UIComponent(action_uic:Find(z))
+                    child:SetVisible(true)
+
+                end
+                first = false
+                second = true
+            else
+                if second then
+                    for z = 1, action_uic:ChildCount() -1 do
+                        local child = UIComponent(action_uic:Find(z))
+                        child:SetVisible(false)
+                    end
+                    second = false
+                end
+            end
 
             -- TODO testing colours :)
-            local random_colour_index = cm:random_number(#colors or 1, 1)
+            --[[local random_colour_index = cm:random_number(#colors or 1, 1)
             local random_colour = colors[random_colour_index]
             table.remove(colors, random_colour_index)
             if random_colour then
@@ -307,7 +341,7 @@ function ui_obj:create_left_column()
                     local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
                     action_uic:SetImagePath(str, x)
                 end
-            end
+            end]]
         end
 
         local upgrades_holder = core:get_or_create_component("upgrades_holder", "ui/vandy_lib/script_dummy", holder)
@@ -319,21 +353,24 @@ function ui_obj:create_left_column()
         for j = 1, 3 do
             local upgrade_key = upgrades[j]
 
-            local upgrade_holder = core:get_or_create_component("upgrade_holdeR_"..tostring(j), "ui/vandy_lib/script_dummy", upgrades_holder)
+            local upgrade_holder = core:get_or_create_component("upgrade_holder_"..tostring(j), "ui/vandy_lib/script_dummy", upgrades_holder)
             upgrade_holder:SetDockingPoint(pos) 
             pos = pos + 1
             upgrade_holder:SetDockOffset(0, 0)
             upgrade_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
 
-            local upgrade_uic = core:get_or_create_component(upgrade_key, "ui/templates/square_medium_button", upgrade_holder)
+            local upgrade_uic = core:get_or_create_component(upgrade_key, "ui/vandy_lib/buildingframe", upgrade_holder)
             upgrade_uic:SetDockingPoint(5)
             upgrade_uic:SetDockOffset(0, 0)
+
+            upgrade_uic:SetState("built_panel")
+            upgrade_uic:SetTooltipText("", true)
 
             local img_path = img_start .. category_to_img_key[category_key] .. "_" .. upgrade_key .. img_end
             upgrade_uic:SetImagePath(img_path)
 
             -- TODO testing colours :)
-            local random_colour_index = cm:random_number(#colors or 1, 1)
+            --[[local random_colour_index = cm:random_number(#colors or 1, 1)
             local random_colour = colors[random_colour_index]
             table.remove(colors, random_colour_index)
             if random_colour then
@@ -341,7 +378,7 @@ function ui_obj:create_left_column()
                     local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
                     upgrade_uic:SetImagePath(str, x)
                 end
-            end
+            end]]
         end
     end
 
