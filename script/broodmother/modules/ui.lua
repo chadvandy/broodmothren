@@ -313,35 +313,11 @@ function ui_obj:create_left_column()
 
             local img_path = img_start .. category_to_img_key[category_key] .. "_" .. action_key .. img_end
             action_uic:SetImagePath(img_path)
-            
-            if first then
-                for z = 1, action_uic:ChildCount() -1 do
-                    local child = UIComponent(action_uic:Find(z))
-                    child:SetVisible(true)
 
-                end
-                first = false
-                second = true
-            else
-                if second then
-                    for z = 1, action_uic:ChildCount() -1 do
-                        local child = UIComponent(action_uic:Find(z))
-                        child:SetVisible(false)
-                    end
-                    second = false
-                end
+            for z = 1, action_uic:ChildCount() -1 do
+                local child = UIComponent(action_uic:Find(z))
+                child:SetVisible(false)
             end
-
-            -- TODO testing colours :)
-            --[[local random_colour_index = cm:random_number(#colors or 1, 1)
-            local random_colour = colors[random_colour_index]
-            table.remove(colors, random_colour_index)
-            if random_colour then
-                for x = 1, #index_to_image do
-                    local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
-                    action_uic:SetImagePath(str, x)
-                end
-            end]]
         end
 
         local upgrades_holder = core:get_or_create_component("upgrades_holder", "ui/vandy_lib/script_dummy", holder)
@@ -369,16 +345,10 @@ function ui_obj:create_left_column()
             local img_path = img_start .. category_to_img_key[category_key] .. "_" .. upgrade_key .. img_end
             upgrade_uic:SetImagePath(img_path)
 
-            -- TODO testing colours :)
-            --[[local random_colour_index = cm:random_number(#colors or 1, 1)
-            local random_colour = colors[random_colour_index]
-            table.remove(colors, random_colour_index)
-            if random_colour then
-                for x = 1, #index_to_image do
-                    local str = "ui/skins/default/button_basic_"..index_to_image[x].."_"..random_colour..".png"
-                    upgrade_uic:SetImagePath(str, x)
-                end
-            end]]
+            for z = 1, upgrade_uic:ChildCount() -1 do
+                local child = UIComponent(upgrade_uic:Find(z))
+                child:SetVisible(false)
+            end
         end
     end
 
