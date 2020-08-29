@@ -39,8 +39,10 @@ function ui_obj:set_state_text_with_resize(uic, text)
         -- errmsg
         return false
     end
+    
+    -- TODO figure out why l > 1 for some components
 
-    local w,h = uic:TextDimensionsForText(text)
+    local w,h,l = uic:TextDimensionsForText(text)
     uic:ResizeTextResizingComponentToInitialSize(w, h)
     uic:SetStateText(text)
 end
@@ -150,9 +152,9 @@ function ui_obj:create_actions_column()
     title_text:Resize(title:Width() * 0.9, title:Height() * 0.9)
 
     do -- resize stuff to make the title not stretchy or ugggggo
-        local w,h = title_text:TextDimensionsForText("My City Name")
+        local w,h = title_text:TextDimensionsForText("Actions & Upgrades")
         title_text:ResizeTextResizingComponentToInitialSize(w, h)
-        title_text:SetStateText("[[col:fe_white]]My City Name[[/col]]")
+        title_text:SetStateText("[[col:fe_white]]Actions & Upgrades[[/col]]")
     end
 
     -- create the category holder in the center of the parchment
@@ -384,8 +386,6 @@ function ui_obj:create_broodmother_column()
     border:SetCanResizeWidth(true) border:SetCanResizeHeight(true)
     border:Resize(button_holder:Width(), button_holder:Height())
 
-    local index = 4
-
     local parent_height = button_holder:Height()
     local parent_width = button_holder:Width()
 
@@ -432,8 +432,12 @@ function ui_obj:create_broodmother_column()
     local locked = false
     local active = true
 
-    for i = 1, index do
+    local slots = bmm:get_slots()
+
+    for i = 1, #slots do
         local test_broodmother = broodmothers[i]
+
+        local slot_state = slots[i]
 
         local broodmother_holder = nil
         local broodmother_uic = nil
@@ -449,23 +453,25 @@ function ui_obj:create_broodmother_column()
             broodmother_uic = core:get_or_create_component(broodmother_key, "ui/broodmother/templates/broodmother_icon", broodmother_holder)
 
             --broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
-            local num = cm:random_number(4, 1)
+            local img_path = test_broodmother:get_base_image()
 
             -- TODO save the image to the broodmother instead of grabbing it here
-            broodmother_uic:SetImagePath("ui/broodmother/Broodmama_generic_"..tostring(num).."_inactive.png", 0)
+            broodmother_uic:SetImagePath(img_path, 0)
 
             -- overwrite the "active" image 
             --[[for j = 1, #image_paths do
                 broodmother_uic:SetImagePath(prefix .. "Broodmama_open_slot.png", j)
             end]]
 
-            if active then
+            broodmother_uic:SetState("active")
+
+            --[[if active then
                 broodmother_uic:SetState("active")
                 active = false
             else
                 broodmother_uic:SetState("inactive")
                 active = true
-            end
+            end]]
 
             self:add_listener("select_broodmother")
             core:add_listener(
@@ -482,8 +488,14 @@ function ui_obj:create_broodmother_column()
         else
             broodmother_uic = core:get_or_create_component("empty_slot", "ui/broodmother/templates/broodmother_icon", broodmother_holder)
 
-            -- TODO test if it's locked or just empty
-            broodmother_uic:SetState("locked")
+            -- set it as locked or open
+            if slot_state == "locked" then
+                broodmother_uic:SetState(slot_state)
+                broodmother_uic:SetTooltipText("[[col:red]]This slot is currently locked! It will be unlocked when this mod is more completed. :)[[/col]]", true)
+            else
+                broodmother_uic:SetState(slot_state)
+                broodmother_uic:SetTooltipText("Open Slot", true)
+            end
         end
 
         -- set the size to 1.4x larger
@@ -522,11 +534,31 @@ function ui_obj:create_broodmother_column()
     name:SetDockingPoint(5)
     name:SetDockOffset(0, 0)
     name:Resize(broodmother_title:Width() * 0.9, broodmother_title:Height() * 0.9)
+
+    local broodmother_location = core:get_or_create_component("broodmother_location", "ui/vandy_lib/text/la_gioconda_uppercase", broodmother_details)
+    broodmother_location:SetStateText("")
+    broodmother_location:SetVisible(true)
     
+    broodmother_location:SetCanResizeWidth(true) broodmother_location:SetCanResizeHeight(true)
+    broodmother_location:Resize(broodmother_details:Width() * 0.95, broodmother_location:Height() * 0.9)
+    broodmother_location:SetDockingPoint(2)
+    broodmother_location:SetDockOffset(0, 10 + broodmother_title:Height())
+
+    local div = core:get_or_create_component("hbar", "ui/templates/custom_image", broodmother_location)
+    div:SetVisible(true)
+    div:SetState("custom_state_1")
+    div:SetImagePath("ui/skins/default/separator_skull2.png")
+
+    div:SetCanResizeHeight(true) div:SetCanResizeWidth(true)
+    div:Resize(321, 14)
+    div:SetCanResizeHeight(false) div:SetCanResizeWidth(false)
+
+    div:SetDockingPoint(8)
+    div:SetDockOffset(0, 15)
     
     local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/script_dummy", broodmother_details)
-    traits_panel:SetDockingPoint(8)
-    traits_panel:SetDockOffset(0, -5)
+    traits_panel:SetDockingPoint(2)
+    traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 20)
     traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
     
     local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda", traits_panel)
@@ -535,9 +567,9 @@ function ui_obj:create_broodmother_column()
     text:SetDockingPoint(2)
     text:SetDockOffset(0, 10)
 
-    local w,h = text:TextDimensionsForText("Traits Go Here!")
+    local w,h = text:TextDimensionsForText("Broodmother Traits")
     text:ResizeTextResizingComponentToInitialSize(w,h)
-    text:SetStateText("Traits Go Here!")
+    text:SetStateText("Broodmother Traits")
 
     local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", traits_panel)
     list_view:SetDockingPoint(2)
@@ -564,6 +596,30 @@ function ui_obj:create_broodmother_column()
     local l_handle = find_uicomponent(list_view, "vslider")
     l_handle:SetDockingPoint(6)
     l_handle:SetDockOffset(-20, 0)
+
+    local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", broodmother_details)
+    effects_holder:SetVisible(true)
+    effects_holder:SetCanResizeWidth(true) effects_holder:SetCanResizeHeight(true)
+    effects_holder:Resize(broodmother_details:Width() * 0.95, broodmother_details:Height() * 0.4)
+    effects_holder:SetCanResizeWidth(false) effects_holder:SetCanResizeHeight(false)
+
+    effects_holder:SetState("custom_state_2")
+    effects_holder:SetDockingPoint(8)
+    effects_holder:SetDockOffset(0, -10)
+
+    effects_holder:SetImagePath("ui/skins/warhammer2/panel_leather_frame_purple.png", 1)
+
+    local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
+    div:SetVisible(true)
+    div:SetCanResizeWidth(true) div:SetCanResizeHeight(true)
+    div:Resize(6, effects_holder:Height() * 0.98)
+    div:SetCanResizeWidth(false) div:SetCanResizeHeight(false)
+
+    div:SetState("custom_state_1")
+    div:SetImagePath("ui/skins/warhammer2/slider_vertical_mid.png", 0)
+
+    div:SetDockingPoint(5)
+    div:SetDockOffset(0, 0)
 end
 
 function ui_obj:create_context_column()
@@ -650,13 +706,19 @@ function ui_obj:populate_panel_on_broodmother_selected(broodmother_obj)
     local broodmother_column = find_uicomponent(panel, "broodmother_column")
     local broodmother_details = find_uicomponent(broodmother_column, "dummy", "broodmother_details")
     local broodmother_title = find_uicomponent(broodmother_details, "broodmother_title", "name")
+    local broodmother_location = find_uicomponent(broodmother_details, "broodmother_location")
 
     local traits_panel = find_uicomponent(broodmother_column, "traits_panel")
     local list_box = find_uicomponent(traits_panel, "list_view", "list_clip", "list_box")
 
     -- set the broodmother name on the title bar
     local broodmother_name = broodmother_obj:get_name()
-    self:set_state_text_with_resize(broodmother_title, broodmother_name)
+    self:set_state_text_with_resize(broodmother_title, "[[col:fe_white]]"..broodmother_name.."[[/col]]")
+
+    -- set the broodmother location text
+    local location = broodmother_obj:get_location() -- location is a region_key; must be localised!
+    local location_text = effect.get_localised_string("regions_onscreen_"..location)
+    self:set_state_text_with_resize(broodmother_location, "Location: "..location_text)
 
     -- set all other broodmothers to their proper states
 

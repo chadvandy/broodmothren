@@ -32,6 +32,13 @@ local broodmama_manager = {
 
     -- similar to CQI for TQ objects; unique counter to identify broodmothers
     broodmother_unique_index = 1,
+
+    slots = {
+        [1] = "open",
+        [2] = "open",
+        [3] = "locked",
+        [4] = "locked",
+    }
 }
 
 function broodmama_manager:log_init()
@@ -77,10 +84,13 @@ function broodmama_manager:init()
     -- load individual modules
     self._UI_OBJ = self:load_module("ui", self.module_filepath)
     self._BROODMOTHER = self:load_module("broodmother", self.module_filepath)
+
+    local data_path = self.module_filepath .. "data/"
     self._data = {}
-    self._data.categories = self:load_module("categories", self.module_filepath.."data/")
-    self._data.actions = self:load_module("actions", self.module_filepath.."data/")
-    self._data.upgrades = self:load_module("upgrades", self.module_filepath.."data/")
+    self._data.broodmothers = self:load_module("predefined_broodmothers", data_path)
+    self._data.categories = self:load_module("categories", data_path)
+    self._data.actions = self:load_module("actions", data_path)
+    self._data.upgrades = self:load_module("upgrades", data_path)
 end
 
 function broodmama_manager:load_module(module_name, path)
@@ -143,6 +153,77 @@ end
 
 function broodmama_manager:get_broodmother_prototype()
     return self._BROODMOTHER
+end
+
+function broodmama_manager:get_predefined_broodmothers()
+    return self._data.broodmothers
+end
+
+function broodmama_manager:get_predefined_broodmothers_for_faction(faction_key)
+    if not is_string(faction_key) then
+        -- errmsg
+        return false
+    end
+
+    local test = self:get_predefined_broodmothers()[faction_key]
+    if is_nil(test) then
+        -- errmsg
+        return false
+    end
+
+    return test
+end
+
+function broodmama_manager:add_predefined_broodmother_for_faction(faction_key, broodmother_name, broodmother_image_path, broodmother_traits)
+    if not is_string(faction_key) then
+        -- errmsg
+        return false
+    end
+
+    if is_nil(broodmother_name) then
+        broodmother_name = "Broodmother"
+    end
+
+    if not is_string(broodmother_name) then
+        -- errmsg
+        return false
+    end
+
+    if is_nil(broodmother_image_path) then
+        broodmother_image_path = "ui/broodmother/Broodmama_generic_2_inactive.png"
+    end
+
+    if not is_string(broodmother_image_path) then
+        -- errmsg
+        return false
+    end
+
+    if is_nil(broodmother_traits) then
+        broodmother_traits = {}
+    end
+
+    if not is_table(broodmother_traits) then
+        -- errmsg
+        return false
+    end
+end
+
+function broodmama_manager:get_slot_state(index)
+    if not is_number(index) then
+        -- errmsg
+        return false
+    end
+
+    if is_nil(self.slots[index]) then
+        -- errmsg, slot doesn't exist
+        return false
+    end
+
+    return self.slots[index]
+end
+
+function broodmama_manager:get_slots()
+    return self.slots
 end
 
 function broodmama_manager:get_categories()
@@ -431,6 +512,22 @@ function broodmama_manager:create_new_broodmother(owning_faction, region_key)
     self.broodmothers[#self.broodmothers+1] = new_broodmother
 end
 
+function broodmama_manager:create_predefined_broodmother(obj)
+    local faction_obj = cm:get_faction(obj.faction_key)
+    if not faction_obj then
+        -- issue
+        return false
+    end
+
+    obj.location = faction_obj:home_region():name()
+
+    local new_broodmother = self:get_broodmother_prototype().new_from_obj(obj)
+
+    self:log("Predefined broodmother created for ["..new_broodmother:get_faction_key().."] with key ["..new_broodmother:get_key().."] in region ["..new_broodmother:get_location().."].")
+
+    self.broodmothers[#self.broodmothers+1] = new_broodmother
+end
+
 -- this is called on the beginning of every new game.
 -- create new broodmothers in all Skaven factions
 -- do special stuff for player factions
@@ -462,8 +559,21 @@ function broodmama_manager:new_game_startup()
             if skv_faction:has_home_region() then
                 location = skv_faction:home_region():name()
             end
-            self:create_new_broodmother(skv_faction:name(), location)
 
+            local faction_key = skv_faction:name()
+
+            local test = self:get_predefined_broodmothers_for_faction(faction_key)
+
+            if test then
+                for j = 1, #test do
+                    local broodmother_obj = test[j]
+                    self:create_predefined_broodmother(broodmother_obj)
+                end
+            else
+                self:create_new_broodmother(skv_faction:name(), location)
+            end
+
+            -- TODO remove testing
             if skv_faction:is_human() then
                 -- do it two more times!
                 self:create_new_broodmother(skv_faction:name(), location)
@@ -498,6 +608,7 @@ cm:add_saving_game_callback(
     function(context)
         cm:save_named_value("broodmothers_list", broodmama_manager.broodmothers, context)
         cm:save_named_value("broodmothers_unique_counter", broodmama_manager.broodmother_unique_index, context)
+        cm:save_named_value("broodmother_slots", broodmama_manager.slots, context)
     end
 )
 
@@ -506,6 +617,7 @@ cm:add_loading_game_callback(
         if not cm:is_new_game() then
             broodmama_manager.broodmothers = cm:load_named_value("broodmothers_list", {}, context)
             broodmama_manager.broodmother_unique_index = cm:load_named_value("broodmothers_unique_counter", 0, context)
+            broodmama_manager.slots = cm:load_named_value("broodmother_slots", {}, context)
 
             for i,o in pairs(broodmama_manager.broodmothers) do
                 broodmama_manager:instantiate_loaded_broodmothers(i,o)

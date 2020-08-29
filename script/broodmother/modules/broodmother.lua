@@ -9,7 +9,18 @@ local broodmother_obj = {
     traits = {},
 }
 
-function broodmother_obj.new(faction_key, region_key)
+function broodmother_obj.new_from_obj(o)
+    o = o or {}
+
+    setmetatable(o, {__index = broodmother_obj})
+
+    o.index = bmm:get_next_unique_counter()
+    o.location = cm:get_faction(o.faction_key):home_region():name()
+
+    return o
+end
+
+function broodmother_obj.new(faction_key, region_key, base_image)
     local new_broodmother = {}
 
     setmetatable(new_broodmother, {__index = broodmother_obj})
@@ -21,7 +32,24 @@ function broodmother_obj.new(faction_key, region_key)
 
     new_broodmother.index = bmm:get_next_unique_counter()
 
+    if not base_image then
+        new_broodmother:assign_random_image()
+    else
+        new_broodmother.image = base_image
+    end
+
     return new_broodmother
+end
+
+function broodmother_obj:assign_random_image()
+    -- TODO test for eshin/etc
+    local index = cm:random_number(4, 1)
+
+    self.image = "ui/broodmother/Broodmama_generic_"..tostring(index).."_inactive.png"
+end
+
+function broodmother_obj:get_base_image()
+    return self.image
 end
 
 function broodmother_obj:get_name()
