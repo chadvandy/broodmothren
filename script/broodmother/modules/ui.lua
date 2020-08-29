@@ -65,19 +65,46 @@ function ui_obj:close_frame()
     self:clear_listeners()
 end
 
-function ui_obj:create_left_column()
+-- ths was in the actions column, moving out temporarily (or maybe permanently)
+local function blank_stuff()
+    -- create the bottom component
+    local bottom_text_bg = core:get_or_create_component("flavour_text_holder", "ui/vandy_lib/custom_image_tiled", dummy)
+    bottom_text_bg:SetVisible(true)
+    bottom_text_bg:SetState("custom_state_2")
+    bottom_text_bg:SetImagePath("ui/skins/default/panel_stack.png", 1)
+    bottom_text_bg:SetCanResizeWidth(true) bottom_text_bg:SetCanResizeHeight(true)
+    bottom_text_bg:Resize(dummy:Width() * 0.95, dummy:Height() * 0.15)
+
+    bottom_text_bg:SetDockingPoint(8)
+    bottom_text_bg:SetDockOffset(0, -15)
+
+    local bottom_text = core:get_or_create_component("flavour_text", "ui/vandy_lib/text/la_gioconda", bottom_text_bg)
+    bottom_text:SetVisible(true)
+
+    bottom_text:SetDockingPoint(5)
+    bottom_text:SetDockOffset(0, 0)
+    bottom_text:Resize(bottom_text_bg:Width() * 0.95, bottom_text_bg:Height() * 0.95)
+
+    do
+        local w,h = bottom_text:TextDimensionsForText("My Flavour Text")
+        bottom_text:ResizeTextResizingComponentToInitialSize(w, h)
+        bottom_text:SetStateText("[[col:fe_white]]My Flavour Text[[/col]]")
+    end
+end
+
+function ui_obj:create_actions_column()
     local panel = find_uicomponent(self.panel_name)
-    local left_column = find_uicomponent(panel, "left_column")
+    local actions_column = find_uicomponent(panel, "actions_column")
 
     local img_path = effect.get_skinned_image_path("fe_plaque.png")
 
     -- left column, background is a current dummy
-    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", left_column)
+    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", actions_column)
     dummy:SetVisible(true)
     dummy:SetState("custom_state_2")
     dummy:SetImagePath("ui/skins/warhammer2/panel_back_top.png", 1)
     dummy:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
-    dummy:Resize(left_column:Width(), left_column:Height())
+    dummy:Resize(actions_column:Width(), actions_column:Height())
 
     dummy:SetDockingPoint(5)
     dummy:SetDockOffset(0, 0)
@@ -87,7 +114,7 @@ function ui_obj:create_left_column()
     border:SetState('custom_state_2')
     border:SetImagePath("ui/skins/warhammer2/panel_back_frame.png", 1)
     border:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
-    border:Resize(left_column:Width(), left_column:Height())
+    border:Resize(actions_column:Width(), actions_column:Height())
 
     border:SetDockingPoint(5)
     border:SetDockOffset(0, 0)
@@ -112,34 +139,10 @@ function ui_obj:create_left_column()
         title_text:SetStateText("[[col:fe_white]]My City Name[[/col]]")
     end
 
-    -- create the bottom component
-    local bottom_text_bg = core:get_or_create_component("flavour_text_holder", "ui/vandy_lib/custom_image_tiled", dummy)
-    bottom_text_bg:SetVisible(true)
-    bottom_text_bg:SetState("custom_state_2")
-    bottom_text_bg:SetImagePath("ui/skins/default/panel_stack.png", 1)
-    bottom_text_bg:SetCanResizeWidth(true) bottom_text_bg:SetCanResizeHeight(true)
-    bottom_text_bg:Resize(dummy:Width() * 0.95, dummy:Height() * 0.15)
-
-    bottom_text_bg:SetDockingPoint(8)
-    bottom_text_bg:SetDockOffset(0, -15)
-
-    local bottom_text = core:get_or_create_component("flavour_text", "ui/vandy_lib/text/la_gioconda", bottom_text_bg)
-    bottom_text:SetVisible(true)
-
-    bottom_text:SetDockingPoint(5)
-    bottom_text:SetDockOffset(0, 0)
-    bottom_text:Resize(bottom_text_bg:Width() * 0.95, bottom_text_bg:Height() * 0.95)
-
-    do
-        local w,h = bottom_text:TextDimensionsForText("My Flavour Text")
-        bottom_text:ResizeTextResizingComponentToInitialSize(w, h)
-        bottom_text:SetStateText("[[col:fe_white]]My Flavour Text[[/col]]")
-    end
-
     -- create the category holder in the center of the parchment
 
     -- get the remaining height available in the left column; -25 is for a 5px margin on top and bottom (and the -15 offset for the bottom background)
-    local remaining_height = dummy:Height() - bottom_text_bg:Height() - title:Height() - 25
+    local remaining_height = dummy:Height() - title:Height() - 25
 
     -- set the holder to -20 of the dummy, again for 10px margins on left/right
     local remaining_width = dummy:Width() - 20
@@ -150,80 +153,12 @@ function ui_obj:create_left_column()
 
     categories_holder:Resize(remaining_width, remaining_height)
 
-    local categories = {
-        "bigger_broodmothers",
-        "careful_caretakers",
-        "clever_concoctions",
-        "improved_incubators",
-    }
-
     local i_to_docking_point = {
         [1] = 1, -- top left
         [2] = 3, -- top right
         [3] = 7, -- bottom left
         [4] = 9, -- bottom right
     }
-
-    local categories_to_actions = {
-        bigger_broodmothers = {
-            actions = {
-                "feed",
-                "move",
-                "starve",
-            },
-            upgrades = {
-                "less_bones",
-                "more_protein",
-                "secret_ingredient",
-            }
-        },
-
-        careful_caretakers = {
-            actions = {
-                "eat",
-                "enslave",
-                "militarize",
-            },
-            upgrades = {
-                "extra_workers",
-                "overseers",
-                "training",
-            },
-        },
-        clever_concoctions = {
-            actions = {
-                "heal",
-                "observe",
-                "experiment",
-            },
-            upgrades = {
-                "growth_stimulants",
-                "teeming_tonics",
-                "healing_potions",
-            },
-        },
-        improved_incubators = {
-            actions = {
-                "quick",
-                "planning",
-                "engineer",
-            },
-            upgrades = {
-                "tunnels",
-                "warrens",
-                "incubators",
-            },
-        },
-    }
-
-    local img_start = "ui/broodmother/rhm2_"
-    local category_to_img_key = {
-        bigger_broodmothers = "diet",
-        careful_caretakers = "care",
-        clever_concoctions = "research",
-        improved_incubators = "infrastructure",
-    }
-    local img_end = "_icon.png"
 
     local index_to_image = {
         [1] = "pressed",
@@ -247,11 +182,19 @@ function ui_obj:create_left_column()
         "armour",
     }
 
+    local categories = bmm:get_categories()
+    local i = 1
+
     -- loop through and create each individual category header
-    for i = 1, #categories do
-        local category_key = categories[i]
-        local category_image_path = "ui/broodmother/category_"..category_key..".png"
+    for category_key, category_data in pairs(categories) do
         local docking_point_for_i = i_to_docking_point[i]
+        i = i + 1
+
+        local category_image_path = category_data.img_path
+        local category_text_string = effect.get_localised_string(category_data.text_string)
+
+        local upgrade_keys = category_data.upgrades
+        local action_keys = category_data.actions
 
         -- create the positioning component to hold everything for this category
         local category_holder = core:get_or_create_component(category_key.."_holder", "ui/vandy_lib/script_dummy", categories_holder)
@@ -261,6 +204,11 @@ function ui_obj:create_left_column()
         category_holder:SetDockingPoint(docking_point_for_i)
         category_holder:SetDockOffset(0, 0)
 
+        local category_title = core:get_or_create_component("title", "ui/vandy_lib/banner_with_text", category_holder)
+        category_title:SetStateText(category_text_string)
+        category_title:SetDockingPoint(2)
+        category_title:SetDockOffset(0, 0)
+
         -- create the image for the category
         local category_uic = core:get_or_create_component(category_key..
         "_img", "ui/templates/custom_image", category_holder)
@@ -268,7 +216,7 @@ function ui_obj:create_left_column()
         category_uic:SetImagePath(category_image_path)
         category_uic:SetVisible(true)
 
-        local new_w = category_holder:Width() * 0.95
+        local new_w = category_holder:Width() * 0.90
         local new_h = new_w / 3
 
         category_uic:SetCanResizeWidth(true) category_uic:SetCanResizeHeight(true)
@@ -276,27 +224,40 @@ function ui_obj:create_left_column()
         category_uic:SetCanResizeWidth(false) category_uic:SetCanResizeHeight(false)
 
         category_uic:SetDockingPoint(2)
-        category_uic:SetDockOffset(0, 5)
+        category_uic:SetDockOffset(0, 5 + category_title:Height())
 
         local holder = core:get_or_create_component("holder", "ui/vandy_lib/script_dummy", category_holder)
         holder:SetDockingPoint(2)
-        holder:SetDockOffset(0, category_uic:Height() + 5)
-        holder:Resize(category_holder:Width(), category_holder:Height() - category_uic:Height())
+        holder:SetDockOffset(0, category_uic:Height() + category_title:Height() + 5)
+        holder:Resize(category_holder:Width(), category_holder:Height() - category_uic:Height() - category_title:Height())
 
-        local actions = categories_to_actions[category_key]["actions"]
-        local upgrades = categories_to_actions[category_key]["upgrades"]
+        local actions_prototype = bmm:get_action_prototype()
+        local actions_template = actions_prototype.template_path
+        local actions_tt = effect.get_localised_string(actions_prototype.tooltip_string)
 
-        local actions_holder = core:get_or_create_component("actions_holder", "ui/vandy_lib/script_dummy", holder)
+        local actions_holder = core:get_or_create_component("actions_holder", actions_template, holder)
+        actions_holder:SetVisible(true)
+        actions_holder:SetState("custom_state_2")
+        actions_holder:SetImagePath("ui/skins/default/parchment_divider.png", 1)
+
         actions_holder:SetDockingPoint(2)
         actions_holder:SetDockOffset(0, 0)
+        actions_holder:SetCanResizeWidth(true) actions_holder:SetCanResizeHeight(true)
         actions_holder:Resize(holder:Width(), holder:Height() * 0.49)
+
+        actions_holder:SetTooltipText(actions_tt, true)
 
         local first = true
         local second = false
 
         local pos = 4
-        for j = 1, 3 do
-            local action_key = actions[j]
+        for j = 1, #action_keys do
+            local action_key = action_keys[j]
+            local action_data = bmm:get_action_with_key(action_key)
+
+            local action_text = effect.get_localised_string(action_data.text_string)
+            local action_tt = effect.get_localised_string(action_data.tooltip_string)
+            local action_img = action_data.img_path
 
             local action_holder = core:get_or_create_component("action_holder_"..tostring(j), "ui/vandy_lib/script_dummy", actions_holder)
             action_holder:SetDockingPoint(pos) 
@@ -309,10 +270,9 @@ function ui_obj:create_left_column()
             action_uic:SetDockOffset(0, 0)
 
             action_uic:SetState("built_panel")
-            action_uic:SetTooltipText("", true)
+            action_uic:SetTooltipText(action_text.."||"..action_tt, true)
 
-            local img_path = img_start .. category_to_img_key[category_key] .. "_" .. action_key .. img_end
-            action_uic:SetImagePath(img_path)
+            action_uic:SetImagePath(action_img)
 
             for z = 1, action_uic:ChildCount() -1 do
                 local child = UIComponent(action_uic:Find(z))
@@ -320,14 +280,32 @@ function ui_obj:create_left_column()
             end
         end
 
-        local upgrades_holder = core:get_or_create_component("upgrades_holder", "ui/vandy_lib/script_dummy", holder)
+        local upgrades_prototype = bmm:get_upgrade_prototype()
+        local upgrades_template = upgrades_prototype.template_path
+        local upgrades_tt = effect.get_localised_string(upgrades_prototype.tooltip_string)
+
+        local upgrades_holder = core:get_or_create_component("upgrades_holder", upgrades_template, holder)
+        upgrades_holder:SetVisible(true)
+        upgrades_holder:SetState("custom_state_2")
+        upgrades_holder:SetImagePath("ui/skins/default/parchment_divider.png", 1)
+
         upgrades_holder:SetDockingPoint(8)
         upgrades_holder:SetDockOffset(0, 0)
+        upgrades_holder:SetCanResizeWidth(true) upgrades_holder:SetCanResizeHeight(true)
+
         upgrades_holder:Resize(holder:Width(), holder:Height() * 0.49)
 
+        upgrades_holder:SetInteractive(true)
+        upgrades_holder:SetTooltipText(upgrades_tt, true)
+
         local new_pos = 4
-        for j = 1, 3 do
-            local upgrade_key = upgrades[j]
+        for j = 1, #upgrade_keys do
+            local upgrade_key = upgrade_keys[j]
+            local upgrade_data = bmm:get_upgrade_with_key(upgrade_key)
+
+            local upgrade_text = effect.get_localised_string(upgrade_data.text_string)
+            local upgrade_tt = effect.get_localised_string(upgrade_data.tooltip_string)
+            local img_path = upgrade_data.img_path
 
             local upgrade_holder = core:get_or_create_component("upgrade_holder_"..tostring(j), "ui/vandy_lib/script_dummy", upgrades_holder)
             upgrade_holder:SetDockingPoint(pos) 
@@ -340,9 +318,8 @@ function ui_obj:create_left_column()
             upgrade_uic:SetDockOffset(0, 0)
 
             upgrade_uic:SetState("built_panel")
-            upgrade_uic:SetTooltipText("", true)
+            upgrade_uic:SetTooltipText(upgrade_text.."||"..upgrade_tt, true)
 
-            local img_path = img_start .. category_to_img_key[category_key] .. "_" .. upgrade_key .. img_end
             upgrade_uic:SetImagePath(img_path)
 
             for z = 1, upgrade_uic:ChildCount() -1 do
@@ -351,216 +328,45 @@ function ui_obj:create_left_column()
             end
         end
     end
-
-    --[[local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", dummy)
-    list_view:SetDockingPoint(2)
-    list_view:SetDockOffset(10, title:Height() + 5)
-
-    list_view:SetCanResizeWidth(true) list_view:SetCanResizeHeight(true)
-    list_view:Resize(remaining_width, remaining_height)
-
-    local list_clip = find_uicomponent(list_view, "list_clip")
-    list_clip:SetCanResizeWidth(true) list_clip:SetCanResizeHeight(true)
-    list_clip:SetDockingPoint(0)
-    list_clip:SetDockOffset(0, 0)
-    list_clip:Resize(remaining_width - 30, remaining_height - 30)
-
-    local list_box = find_uicomponent(list_clip, "list_box")
-    list_box:SetCanResizeWidth(true) list_box:SetCanResizeHeight(true)
-    list_box:SetDockingPoint(1)
-    list_box:SetDockOffset(0, 0)
-    list_box:Resize(remaining_width - 30, remaining_height - 30)
-
-    local l_handle = find_uicomponent(list_view, "vslider")
-    l_handle:SetDockingPoint(6)
-    l_handle:SetDockOffset(-20, 0)
-
-    local cats = {
-        "caregivers",
-        "dietary",
-        "personnel",
-        "research"
-    }
-
-    local template = "ui/vandy_lib/expandable_row_header_untiled"
-
-    for i = 1, #cats do
-        local category_key = cats[i]
-
-        local category_uic = core:get_or_create_component(category_key, template, list_box)
-
-        local open = false
-
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 0)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 3)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 4)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 5)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 6)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 7)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 8)
-        category_uic:SetImagePath("ui/broodmother/"..category_key..".png", 9)
-
-        category_uic:SetCanResizeWidth(true) category_uic:SetCanResizeHeight(true)
-
-        local default_w = 975
-        local default_h = 325
-
-        local factor = default_w / default_h -- this is 3
-
-        local new_width = list_box:Width() * 0.95
-        local new_height = new_width / factor
-
-        category_uic:Resize(new_width, new_height)
-
-        category_uic:SetDockingPoint(5)
-        category_uic:SetDockOffset(0, 0)
-
-        local states_to_current_state_images = {
-            ["active"] = {0, 1, 2},
-            ["down"] = {0, 1},
-            ["down_off"] = {0},
-            ["hover"] = {0, 1, 2},
-            ["inactive"] = {0},
-            ["selected"] = {0, 1, 2},
-            ["selected_down"] = {0, 1},
-            ["selected_down_off"] = {0},
-            ["selected_hover"] = {0, 1, 2},
-            ["selected_inactive"] = {0},
-        }
-
-        local num_states = 10
-        local index = 1
-
-        local tab = {}
-
-        for state, image_table in pairs(states_to_current_state_images) do
-            tab[#tab+1] = {state=state,image_table=image_table}
-        end
-
-        core:add_listener(
-            "stupid_loop",
-            "RealTimeTrigger",
-            function(context)
-                return context.string == "stupid_loop"
-            end,
-            function(context)
-                local stuff = tab[index]
-                index = index + 1
-
-                if stuff then
-                    local state = stuff.state
-                    local image_table = stuff.image_table
-
-                    category_uic:SetState(state)
-
-
-                    for x = 1, #image_table do
-                        local image_index = image_table[x]
-                        category_uic:ResizeCurrentStateImage(image_index, new_width, new_height)
-                    end
-                else
-                    -- no more stuff to check
-                    real_timer.unregister("stupid_loop")
-                end
-            end,
-            true
-        )
-
-        real_timer.register_repeating("stupid_loop", 5)
-
-        category_uic:SetState("active")
-
-        local dummy_row = core:get_or_create_component(category_key.."_row", "ui/vandy_lib/script_dummy", list_box)
-
-        dummy_row:SetCanResizeHeight(true) dummy_row:SetCanResizeWidth(true)
-        dummy_row:Resize(new_width, new_height * 0.3)
-
-        dummy_row:SetDockingPoint(5)
-        dummy_row:SetDockOffset(0, 0)
-
-        local keys = {
-            "one",
-            "two",
-            "three",
-            "four",
-        }
-
-        local j_to_offset = {
-            {4, 20},
-            {4, 60},
-            {6, -60},
-            {6, -20}
-        }
-
-        for j = 1, #keys do
-            local key = keys[j]
-            local new_uic = core:get_or_create_component(category_key.."_"..key, "ui/templates/square_medium_button", dummy_row)
-
-            local bloop = j_to_offset[j]
-
-            local point = bloop[1]
-            local offset = bloop[2]
-
-            new_uic:SetDockingPoint(point)
-            new_uic:SetDockOffset(offset, 0)
-        end
-
-        dummy_row:SetVisible(false)
-
-        self:add_listener("cat_pressed")
-        core:add_listener(
-            "cat_pressed",
-            "ComponentLClickUp",
-            function(context)
-                return context.string == category_key
-            end,
-            function(context)
-                local category = find_uicomponent(list_box, category_key)
-                local row = find_uicomponent(list_box, category_key.."_row")
-                if not is_uicomponent(row) then
-                    bmm:log("category row not found for category "..context.string)
-                    core:remove_listener("cat_pressed")
-                    return false
-                end
-
-                open = not open
-
-                if open then
-                    row:SetVisible(true)
-                    category:SetState("selected")
-                else
-                    row:SetVisible(false)
-                    category:SetState("active")
-                end
-            end,
-            true
-        )
-    end
-
-    list_box:Layout()]]
 end
 
-function ui_obj:create_center_column()
+function ui_obj:create_broodmother_column()
     local panel = find_uicomponent(self.panel_name)
-    local center_column = find_uicomponent(panel, "center_column")
+    local broodmother_column = find_uicomponent(panel, "broodmother_column")
     local img_path = effect.get_skinned_image_path("parchment_texture.png")
 
-    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", center_column)
+    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", broodmother_column)
     dummy:SetVisible(true)
     dummy:SetState('custom_state_2')
     dummy:SetImagePath(img_path, 1)
     dummy:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
-    dummy:Resize(center_column:Width(), center_column:Height())
+    dummy:Resize(broodmother_column:Width(), broodmother_column:Height())
 
     dummy:SetDockingPoint(5)
     dummy:SetDockOffset(0, 0)
 
     -- add the four large buttons
-    local button_holder = core:get_or_create_component("broodmother_holder", "ui/vandy_lib/script_dummy", dummy)
+    local button_holder = core:get_or_create_component("broodmother_holder", "ui/vandy_lib/custom_image_tiled", dummy)
     button_holder:SetDockingPoint(2)
     button_holder:SetDockOffset(0, 10)
 
-    button_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.7)
+    button_holder:SetVisible(true)
+    button_holder:SetState('custom_state_2')
+    button_holder:SetImagePath("ui/skins/default/panel_back_tile.png", 1)
+
+    button_holder:SetCanResizeWidth(true) button_holder:SetCanResizeHeight(true)
+    button_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.4)
+
+    local border = core:get_or_create_component("border", "ui/vandy_lib/custom_image_tiled", button_holder)
+    border:SetDockingPoint(5)
+    border:SetDockOffset(0, 0)
+
+    border:SetVisible(true)
+    border:SetState('custom_state_2')
+    border:SetImagePath("ui/skins/wh_main_vmp_vampire_counts/panel_back_border.png", 1)
+
+    border:SetCanResizeWidth(true) border:SetCanResizeHeight(true)
+    border:Resize(button_holder:Width(), button_holder:Height())
 
     local index = 4
 
@@ -570,7 +376,6 @@ function ui_obj:create_center_column()
     local h_pos = 0
     local h_gap = 0
     local all_button_height = 0
-
 
     -- index 0: icon_end_turn.png
     -- index 1: pressed.png
@@ -595,7 +400,20 @@ function ui_obj:create_center_column()
         {"ui/broodmother/Broodmama_option_static.png", "ui/broodmother/Broodmama_option_selected.png", "ui/broodmother/Broodmama_option_hover.png"},
     }
 
+    local i_to_docking_point = {
+        1, 3, 7, 9
+    }
+    
+    local i_to_offset = {
+        {20, 20},
+        {-20, 20},
+        {20, -20}, 
+        {-20, -20},
+    }
+
     local broodmothers = bmm:get_broodmothers_for_faction(cm:get_local_faction(true))
+
+    local locked = false
 
     for i = 1, index do
         local test_broodmother = broodmothers[i]
@@ -605,78 +423,82 @@ function ui_obj:create_center_column()
         -- check if there's a broodmother for this slot; if not, set it inactive and what not
         --if test_broodmother then
 
-            local broodmother_uic = core:get_or_create_component(broodmother_key, "ui/templates/round_extra_large_button", button_holder)
-            broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
+        local broodmother_holder = core:get_or_create_component(broodmother_key, "ui/vandy_lib/script_dummy", button_holder)
+        broodmother_holder:Resize(button_holder:Width() * 0.5, button_holder:Height() * 0.5)
+        broodmother_holder:SetDockingPoint(i_to_docking_point[i])
 
-            -- overwrite the "active" image 
+        local broodmother_uic = core:get_or_create_component(broodmother_key, "ui/broodmother/templates/broodmother_icon", broodmother_holder)
+        --broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
+        local num = cm:random_number(4, 1)
+        broodmother_uic:SetImagePath("ui/broodmother/Broodmama_generic_"..tostring(num).."_inactive.png", 0)
 
-            for j = 1, #image_paths do
-                broodmother_uic:SetImagePath(prefix .. image_paths[j], j)
-            end
-
-            if test_broodmother then
-                broodmother_uic:SetState("active")
-
-                self:add_listener("select_broodmother")
-                core:add_listener(
-                    "select_broodmother",
-                    "ComponentLClickUp",
-                    function(context)
-                        return context.string == broodmother_key
-                    end,
-                    function(context)
-                        self:populate_panel_on_broodmother_selected(test_broodmother)
-                    end,
-                    true
-                )
-            else
-                broodmother_uic:SetState("inactive")
-            end
-
-            -- set the size to 1.4x larger
-            broodmother_uic:SetCanResizeWidth(true) broodmother_uic:SetCanResizeHeight(true)
-            broodmother_uic:Resize(broodmother_uic:Width() * 1.4, broodmother_uic:Height() * 1.4)
-            broodmother_uic:SetCanResizeWidth(false) broodmother_uic:SetCanResizeHeight(false)
-
-            local height = broodmother_uic:Height()
-
-            if h_gap == 0 then
-                all_button_height = height * index
-    
-                local remaining_height = parent_height - all_button_height
-                h_gap = remaining_height / (index + 1)
-                h_pos = h_gap
-            else
-                h_pos = h_gap * i + (height * (i - 1))
-            end
-    
-            broodmother_uic:SetDockingPoint(2)
-            broodmother_uic:SetDockOffset(0, h_pos)
-        --[[else
-            local broodmother_uic = core:get_or_create_component(broodmother_key, "ui/templates/round_extra_large_button", button_holder)
-            broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png")
-
-            -- overwrite the "active" image 
-            broodmother_uic:SetImagePath(i_to_image_paths[5][1], 3)
-            broodmother_uic:SetImagePath(i_to_image_paths[5][2], 1)
-            broodmother_uic:SetImagePath(i_to_image_paths[5][3], 2)
+        -- overwrite the "active" image 
+        --[[for j = 1, #image_paths do
+            broodmother_uic:SetImagePath(prefix .. "Broodmama_open_slot.png", j)
         end]]
+
+        if test_broodmother then
+            broodmother_uic:SetState("active")
+
+            self:add_listener("select_broodmother")
+            core:add_listener(
+                "select_broodmother",
+                "ComponentLClickUp",
+                function(context)
+                    return context.string == broodmother_key
+                end,
+                function(context)
+                    self:populate_panel_on_broodmother_selected(test_broodmother)
+                end,
+                true
+            )
+        else
+            if locked then
+                bmm:log("Setting as locked!")
+                broodmother_uic:SetState("locked")
+                locked = false
+            else
+                bmm:log("Setting as open!")
+                broodmother_uic:SetState("open")
+                locked = true
+            end
+        end
+
+        -- set the size to 1.4x larger
+        broodmother_uic:SetCanResizeWidth(true) broodmother_uic:SetCanResizeHeight(true)
+        broodmother_uic:Resize(broodmother_uic:Width() * 1.4, broodmother_uic:Height() * 1.4)
+        broodmother_uic:SetCanResizeWidth(false) broodmother_uic:SetCanResizeHeight(false)
+
+
+        broodmother_uic:SetDockingPoint(5)
+        broodmother_uic:SetDockOffset(0, 0)
     end
 
-    -- add the traits panel at the bottom
+    -- add the broodmother details panel at the bottom
+    -- has: location, name, traits
 
-    local traits_panel = core:get_or_create_component("traits_holder", "ui/vandy_lib/custom_image_tiled", dummy)
+    local broodmother_details = core:get_or_create_component("broodmother_details", "ui/vandy_lib/custom_image_tiled", dummy)
+    broodmother_details:SetVisible(true)
+    broodmother_details:SetState("custom_state_2")
+    broodmother_details:SetImagePath("ui/skins/default/panel_back_border.png", 1)
 
-    traits_panel:SetVisible(true)
-    traits_panel:SetState("custom_state_2")
-    traits_panel:SetImagePath("ui/skins/default/panel_back_border.png", 1)
+    broodmother_details:SetDockingPoint(8)
+    broodmother_details:SetDockOffset(0, -5)
 
+    broodmother_details:SetCanResizeWidth(true) broodmother_details:SetCanResizeHeight(true)
+    broodmother_details:Resize(dummy:Width() * 0.95, dummy:Height() * 0.58)
+
+    local broodmother_name = core:get_or_create_component("broodmother_name", "ui/templates/panel_subtitle", broodmother_details)
+    broodmother_name:Resize(broodmother_details:Width() * 0.9, broodmother_name:Height())
+    broodmother_name:SetDockingPoint(2)
+    broodmother_name:SetDockOffset(0, 10)
+    
+    
+    local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/script_dummy", broodmother_details)
     traits_panel:SetDockingPoint(8)
     traits_panel:SetDockOffset(0, -5)
-
-    traits_panel:SetCanResizeWidth(true) traits_panel:SetCanResizeHeight(true)
-    traits_panel:Resize(dummy:Width() * 0.95, dummy:Height() * 0.25)
-
+    traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
+    
     local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda", traits_panel)
     text:SetVisible(true)
 
@@ -714,17 +536,17 @@ function ui_obj:create_center_column()
     l_handle:SetDockOffset(-20, 0)
 end
 
-function ui_obj:create_right_column()
+function ui_obj:create_context_column()
     local panel = find_uicomponent(self.panel_name)
-    local right_column = find_uicomponent(panel, "right_column")
+    local context_column = find_uicomponent(panel, "context_column")
     local img_path = effect.get_skinned_image_path("parchment_texture.png")
 
-    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", right_column)
+    local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", context_column)
     dummy:SetVisible(true)
     dummy:SetState('custom_state_2')
     dummy:SetImagePath(img_path, 1)
     dummy:SetCanResizeWidth(true) dummy:SetCanResizeHeight(true)
-    dummy:Resize(right_column:Width(), right_column:Height())
+    dummy:Resize(context_column:Width(), context_column:Height())
 
     dummy:SetDockingPoint(5)
     dummy:SetDockOffset(0, 0)
@@ -795,8 +617,8 @@ function ui_obj:populate_panel_on_broodmother_selected(broodmother_obj)
     bmm:log("Populating on broodmother selected!")
 
     local panel = find_uicomponent(self.panel_name)
-    local center_column = find_uicomponent(panel, "center_column")
-    local traits_panel = find_uicomponent(center_column, "dummy", "traits_holder")
+    local broodmother_column = find_uicomponent(panel, "broodmother_column")
+    local traits_panel = find_uicomponent(broodmother_column, "dummy", "broodmother_details", "traits_panel")
     local list_box = find_uicomponent(traits_panel, "list_view", "list_clip", "list_box")
 
     -- clear any extant traits
@@ -892,27 +714,29 @@ function ui_obj:create_panel()
     local px = panel_x - 10
 
     -- create the left column, center column, and right column UICs
-    local img_path = effect.get_skinned_image_path("parchment_texture.png")
 
-    local left_column = core:get_or_create_component("left_column", "ui/vandy_lib/script_dummy", panel)
-    left_column:Resize(pw * 0.35, ph)
-    left_column:SetDockingPoint(1) -- left side
-    left_column:SetDockOffset(5, 50)
+    -- this is the gap in the white space around each panel
+    local gap = (pw * 0.05) / 4
 
-    local center_column = core:get_or_create_component("center_column", "ui/vandy_lib/script_dummy", panel)
-    center_column:Resize(pw * 0.25, ph)
-    center_column:SetDockingPoint(1) -- center
-    center_column:SetDockOffset(pw * 0.35 + 5, 50)  
+    local context_column = core:get_or_create_component("context_column", "ui/vandy_lib/script_dummy", panel)
+    context_column:Resize(pw * 0.25, ph)
+    context_column:SetDockingPoint(1)
+    context_column:SetDockOffset(gap, 50)
 
-    local right_column = core:get_or_create_component("right_column", "ui/vandy_lib/script_dummy", panel)
-    right_column:Resize(pw * 0.4, ph)
-    right_column:SetDockingPoint(1) -- take a guess
-    right_column:SetDockOffset(pw * 0.6 + 5, 50)
+    local actions_column = core:get_or_create_component("actions_column", "ui/vandy_lib/script_dummy", panel)
+    actions_column:Resize(pw * 0.45, ph)
+    actions_column:SetDockingPoint(2)
+    actions_column:SetDockOffset(0, 50)  
+
+    local broodmother_column = core:get_or_create_component("broodmother_column", "ui/vandy_lib/script_dummy", panel)
+    broodmother_column:Resize(pw * 0.25, ph)
+    broodmother_column:SetDockingPoint(3)
+    broodmother_column:SetDockOffset(-gap, 50)
 
     local ok, err = pcall(function()
-    self:create_left_column()
-    self:create_center_column()
-    self:create_right_column()
+    self:create_actions_column()
+    self:create_broodmother_column()
+    self:create_context_column()
     end) if not ok then bmm:error(err) end
 end
 

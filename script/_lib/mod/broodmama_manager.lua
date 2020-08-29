@@ -77,6 +77,10 @@ function broodmama_manager:init()
     -- load individual modules
     self._UI_OBJ = self:load_module("ui", self.module_filepath)
     self._BROODMOTHER = self:load_module("broodmother", self.module_filepath)
+    self._data = {}
+    self._data.categories = self:load_module("categories", self.module_filepath.."data/")
+    self._data.actions = self:load_module("actions", self.module_filepath.."data/")
+    self._data.upgrades = self:load_module("upgrades", self.module_filepath.."data/")
 end
 
 function broodmama_manager:load_module(module_name, path)
@@ -139,6 +143,205 @@ end
 
 function broodmama_manager:get_broodmother_prototype()
     return self._BROODMOTHER
+end
+
+function broodmama_manager:get_categories()
+    return self._data.categories
+end
+
+function broodmama_manager:get_category_with_key(key)
+    if not is_string(key) then
+        -- errmsg
+        return false
+    end
+
+    local test = self:get_categories()[key]
+    if not test then
+        -- errmsg
+        return false
+    end
+
+    return test
+end
+
+function broodmama_manager:get_category_image(key)
+    local cat = self:get_category_with_key(key)
+    if not cat then
+        -- errmsg
+        return ""
+    end
+
+    return cat.img_path
+end
+
+function broodmama_manager:get_category_text(key)
+    local cat = self:get_category_with_key(key)
+    if not cat then
+        -- errmsg
+        return ""
+    end
+
+    return cat.text_string
+end
+
+function broodmama_manager:get_category_action_keys(key)
+    local cat = self:get_category_with_key(key)
+    if not cat then
+        -- errmsg
+        return {}
+    end
+
+    return cat.actions
+end
+
+function broodmama_manager:get_category_upgrade_keys(key)
+    local cat = self:get_category_with_key(key)
+    if not cat then
+        -- errmsg
+        return {}
+    end
+
+    return cat.upgrades
+end
+
+function broodmama_manager:get_actions()
+    local retval = {}
+    for k, v in pairs(self._data.actions) do
+        if k ~= "prototype" then
+            retval[k] = v
+        end
+    end
+
+    return retval
+end
+
+function broodmama_manager:get_action_prototype()
+    return self._data.actions.prototype
+end
+
+function broodmama_manager:get_action_with_key(key)
+    if not is_string(key) then
+        -- errmsg
+        return false
+    end
+
+    local test = self:get_actions()[key]
+    if not test then
+        -- errmsg
+        return false
+    end
+
+    return test
+end
+
+function broodmama_manager:get_action_text_string(key)
+    local dog = self:get_action_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.text_string
+end
+
+function broodmama_manager:get_action_tooltip_string(key)
+    local dog = self:get_action_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.tooltip_string
+end
+
+function broodmama_manager:get_action_category_key(key)
+    local dog = self:get_action_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.category_key
+end
+
+function broodmama_manager:get_action_image_path(key)
+    local dog = self:get_action_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.img_path
+end
+
+function broodmama_manager:get_upgrades()
+    local retval = {}
+    for k,v in pairs(self._data.upgrades) do
+        if k ~= "prototype" then
+            retval[k] = v
+        end
+    end
+
+    return retval
+end
+
+function broodmama_manager:get_upgrade_prototype()
+    return self._data.upgrades.prototype
+end
+
+function broodmama_manager:get_upgrade_with_key(key)
+    if not is_string(key) then
+        -- errmsg
+        return false
+    end
+
+    local test = self:get_upgrades()[key]
+    if not test then
+        -- errmsg
+        return false
+    end
+
+    return test
+end
+
+function broodmama_manager:get_upgrade_text_string(key)
+    local dog = self:get_upgrade_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.text_string
+end
+
+function broodmama_manager:get_upgrade_tooltip_string(key)
+    local dog = self:get_upgrade_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.tooltip_string
+end
+
+function broodmama_manager:get_upgrade_category_key(key)
+    local dog = self:get_upgrade_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.category_key
+end
+
+function broodmama_manager:get_upgrade_image_path(key)
+    local dog = self:get_upgrade_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.img_path
 end
 
 function get_broodmother_manager()
@@ -264,7 +467,7 @@ function broodmama_manager:new_game_startup()
             if skv_faction:is_human() then
                 -- do it two more times!
                 self:create_new_broodmother(skv_faction:name(), location)
-                self:create_new_broodmother(skv_faction:name(), location)
+                -- actually just once more! self:create_new_broodmother(skv_faction:name(), location)
             end
         end
     end
