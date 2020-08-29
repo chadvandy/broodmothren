@@ -4,6 +4,13 @@ local ui_obj = {
     panel_name = "broodmothers_panel",
 
     listener_names = {},
+
+    -- 1-4 index of either broodmother key or "open" or "locked"
+    slots = {
+
+    },
+
+    selected_slot = 0,
 }
 
 function ui_obj:delete_component(uic)
@@ -277,8 +284,14 @@ function ui_obj:create_actions_column()
             local action_tt = effect.get_localised_string(action_data.tooltip_string)
             local action_img = action_data.img_path
 
+            local duration = action_data.duration
+            local costs = action_data.cost
+
+            local gold_cost = costs.gold
+            local food_cost = costs.food
+
             local action_holder = core:get_or_create_component("action_holder_"..tostring(j), "ui/vandy_lib/script_dummy", actions_holder)
-            action_holder:SetDockingPoint(pos) 
+            action_holder:SetDockingPoint(pos)
             pos = pos + 1
             action_holder:SetDockOffset(0, 0)
             action_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
@@ -292,10 +305,63 @@ function ui_obj:create_actions_column()
 
             action_uic:SetImagePath(action_img)
 
+            local keep = {
+                mouseover_parent = true,
+                food_cost = true,
+                frame_glow = true,
+            }
+
             for z = 1, action_uic:ChildCount() -1 do
                 local child = UIComponent(action_uic:Find(z))
-                child:SetVisible(false)
+                --local id = child:Id()
+                --if not keep[id] then
+                    child:SetVisible(false)
+                    --self:delete_component(child)
+                --end
             end
+
+            local mouseover_parent = UIComponent(action_uic:Find("mouseover_parent"))
+            local turns_center = UIComponent(mouseover_parent:Find("turns_corner"))
+
+            mouseover_parent:SetVisible(true)
+            turns_center:SetVisible(true)
+
+            turns_center:SetStateText(tostring(duration))
+
+            turns_center:SetTooltipText("Turns this action will be active. Only one action can be active at a time!", true)
+
+            local upgrade_box = UIComponent(mouseover_parent:Find("upgrade-box"))
+            local gold_uic = UIComponent(upgrade_box:Find("building_cost"))
+
+            do
+                local x,y = gold_uic:GetDockOffset()
+                y = y + 15
+                gold_uic:SetDockOffset(x, y)
+            end
+
+            local player_gold_amount = cm:get_faction(cm:get_local_faction(true)):treasury()
+
+            -- check if the player can even afford this
+            if gold_cost > player_gold_amount then
+                gold_uic:SetState("red")
+                gold_uic:SetStateText(tostring(gold_cost))
+            else
+                gold_uic:SetState("normal")
+                gold_uic:SetStateText(tostring(gold_cost))
+            end
+
+            local food_uic = UIComponent(action_uic:Find("food_cost"))
+            local food_text_uic = UIComponent(food_uic:Find("dy_food_cost"))
+
+            upgrade_box:SetVisible(true)
+            food_uic:SetVisible(true)
+            gold_uic:SetVisible(true)
+
+            food_text_uic:SetStateText(tostring(food_cost))
+            food_uic:SetImagePath("ui/skins/default/skaven_food_icon.png")
+
+            -- TODO temp disbable
+            food_uic:SetVisible(false)
         end
 
         local upgrades_prototype = bmm:get_upgrade_prototype()
@@ -316,7 +382,7 @@ function ui_obj:create_actions_column()
         upgrades_holder:SetInteractive(true)
         upgrades_holder:SetTooltipText(upgrades_tt, true)
 
-        local new_pos = 4
+        pos = 4
         for j = 1, #upgrade_keys do
             local upgrade_key = upgrade_keys[j]
             local upgrade_data = bmm:get_upgrade_with_key(upgrade_key)
@@ -346,6 +412,7 @@ function ui_obj:create_actions_column()
             end
         end
     end
+    bmm:log("Actions column created!")
 end
 
 function ui_obj:create_broodmother_column()
@@ -442,18 +509,23 @@ function ui_obj:create_broodmother_column()
         local broodmother_holder = nil
         local broodmother_uic = nil
 
+        bmm:log("creating slot num: slot_"..tostring(i))
         broodmother_holder = core:get_or_create_component("slot_"..tostring(i), "ui/vandy_lib/script_dummy", button_holder)
         broodmother_holder:Resize(button_holder:Width() * 0.5, button_holder:Height() * 0.5)
         broodmother_holder:SetDockingPoint(i_to_docking_point[i])
         
         -- check if this is an empty slot or a filled one
         if test_broodmother then
-            
             local broodmother_key = test_broodmother:get_key()
+            bmm:log(broodmother_key)
+
+            self.slots[i] = broodmother_key
+
             broodmother_uic = core:get_or_create_component(broodmother_key, "ui/broodmother/templates/broodmother_icon", broodmother_holder)
 
             --broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
             local img_path = test_broodmother:get_base_image()
+            bmm:log(img_path)
 
             -- TODO save the image to the broodmother instead of grabbing it here
             broodmother_uic:SetImagePath(img_path, 0)
@@ -481,13 +553,16 @@ function ui_obj:create_broodmother_column()
                     return context.string == broodmother_key
                 end,
                 function(context)
-                    self:populate_panel_on_broodmother_selected(test_broodmother)
+                    self:populate_panel_on_broodmother_selected(i)
                 end,
                 true
             )
         else
             broodmother_uic = core:get_or_create_component("empty_slot", "ui/broodmother/templates/broodmother_icon", broodmother_holder)
 
+            self.slots[i] = slot_state
+
+            bmm:log(slot_state)
             -- set it as locked or open
             if slot_state == "locked" then
                 broodmother_uic:SetState(slot_state)
@@ -503,13 +578,13 @@ function ui_obj:create_broodmother_column()
         broodmother_uic:Resize(broodmother_uic:Width() * 1.4, broodmother_uic:Height() * 1.4)
         broodmother_uic:SetCanResizeWidth(false) broodmother_uic:SetCanResizeHeight(false)
 
-
         broodmother_uic:SetDockingPoint(5)
         broodmother_uic:SetDockOffset(0, 0)
     end
 
     -- add the broodmother details panel at the bottom
     -- has: location, name, traits
+
 
     local broodmother_details = core:get_or_create_component("broodmother_details", "ui/vandy_lib/custom_image_tiled", dummy)
     broodmother_details:SetVisible(true)
@@ -620,14 +695,20 @@ function ui_obj:create_broodmother_column()
 
     div:SetDockingPoint(5)
     div:SetDockOffset(0, 0)
+
+    bmm:log("broodmother column created")
 end
 
 function ui_obj:create_context_column()
+    bmm:log("creating context column")
     local panel = find_uicomponent(self.panel_name)
     local context_column = find_uicomponent(panel, "context_column")
     local img_path = effect.get_skinned_image_path("parchment_texture.png")
 
+    bmm:log("creating dummy")
     local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", context_column)
+    bmm:log("created") 
+
     dummy:SetVisible(true)
     dummy:SetState('custom_state_2')
     dummy:SetImagePath(img_path, 1)
@@ -639,38 +720,54 @@ function ui_obj:create_context_column()
 
     local h_diff = (dummy:Height() * 0.01) / 2
 
+    bmm:log("creating rites_holder")
     local rites_holder = core:get_or_create_component("rites_holder", "ui/vandy_lib/script_dummy", dummy)
+    bmm:log("done")
+
     rites_holder:Resize(dummy:Width(), dummy:Height() * 0.7)
     rites_holder:SetDockingPoint(2)
     rites_holder:SetDockOffset(0, (h_diff/2))
 
-    local rites_title = core:get_or_create_component("rites_title", "ui/templates/panel_subtitle", rites_holder)
+    bmm:log("creating rites_title")
+    local rites_title = core:get_or_create_component("rites_title", "ui/vandy_lib/text/la_gioconda_uppercase", rites_holder)
+    bmm:log("done") 
+
     rites_title:Resize(rites_holder:Width() * 0.95, rites_title:Height())
     rites_title:SetDockingPoint(2)
     rites_title:SetDockOffset(0, 10)
 
-    local rites_title_text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda", rites_title)
-    rites_title_text:SetVisible(true)
-    rites_title_text:SetCanResizeWidth(true) rites_title_text:SetCanResizeHeight(true)
-    rites_title_text:Resize(rites_title:Width() * 0.9, rites_title_text:Height() * 0.9)
-
-    rites_title_text:SetDockingPoint(5)
-    rites_title_text:SetDockOffset(0, 0)
-
     do
-        local w,h = rites_title_text:TextDimensionsForText("Currently Selected Rite")
-        rites_title_text:ResizeTextResizingComponentToInitialSize(w, h)
-        rites_title_text:SetStateText("[[col:fe_white]]Currently Selected Rite[[/col]]")
+        local w,h = rites_title:TextDimensionsForText("Currently Selected Action")
+        rites_title:ResizeTextResizingComponentToInitialSize(w, h)
+        rites_title:SetStateText("Currently Selected Action")
     end
 
-    local rites_flavour = core:get_or_create_component("rites_flavour", "ui/vandy_lib/text/la_gioconda", rites_holder)
+    bmm:log("creating hbar")
+    local div = core:get_or_create_component("hbar", "ui/templates/custom_image", rites_title)
+    bmm:log("done")
+
+    div:SetVisible(true)
+    div:SetState("custom_state_1")
+    div:SetImagePath("ui/skins/default/separator_skull2.png")
+
+    div:SetCanResizeHeight(true) div:SetCanResizeWidth(true)
+    div:Resize(321, 14)
+    div:SetCanResizeHeight(false) div:SetCanResizeWidth(false)
+
+    div:SetDockingPoint(8)
+    div:SetDockOffset(0, 15)
+
+    bmm:log("creating rites_flavour")
+    local rites_flavour = core:get_or_create_component("rites_flavour", "ui/vandy_lib/text/georgia_italic_with_background", rites_holder)
+    bmm:log("done")
+
     rites_flavour:SetVisible(true)
 
     rites_flavour:SetCanResizeWidth(true) rites_flavour:SetCanResizeHeight(true)
-    rites_flavour:Resize(rites_flavour:Width() * 1.5, rites_flavour:Height() * 1.5)
+    rites_flavour:Resize(rites_holder:Width() * 0.8, rites_title:Height() * 3)
 
     rites_flavour:SetDockingPoint(2)
-    rites_flavour:SetDockOffset(0, rites_title:Height() + rites_flavour:Height() + 20)
+    rites_flavour:SetDockOffset(0, rites_title:Height() + 25)
     
     do
         local w,h = rites_flavour:TextDimensionsForText("Flavour text is located here, sir.")
@@ -678,7 +775,63 @@ function ui_obj:create_context_column()
         rites_flavour:SetStateText("Flavour text is located here, sir.")
     end
 
-    local costs_holder = core:get_or_create_component("costs_holder", "ui/vandy_lib/script_dummy", dummy)
+    bmm:log("deets_holder")
+    local deets_holder = core:get_or_create_component("deets_holder", "ui/vandy_lib/script_dummy", rites_holder)
+    bmm:log("done")
+
+    deets_holder:Resize(dummy:Width(), dummy:Height() * 0.1)
+    deets_holder:SetDockingPoint(2)
+    deets_holder:SetDockOffset(0, rites_flavour:Height() + rites_title:Height() + 25)
+
+    -- hold gold and food cost on the left, and the cooldown and duration on the right
+    local gold_holder = core:get_or_create_component("gold_holder", "ui/vandy_lib/cost_holder", deets_holder)
+    gold_holder:SetDockingPoint(1)
+    gold_holder:SetDockOffset(10, 0)
+    gold_holder:SetTooltipText("Gold cost||The cost in gold, duh.", true)
+
+    do
+        local icon = find_uicomponent(gold_holder, "icon")
+        icon:SetImagePath("ui/skins/default/icon_treasury.png")
+    end
+
+    local food_holder = core:get_or_create_component("food_holder", "ui/vandy_lib/cost_holder", deets_holder)
+    food_holder:SetDockingPoint(1)
+    food_holder:SetDockOffset(10, 40)
+    food_holder:SetTooltipText("Food cost||The cost in food.", true)
+
+    do
+        local icon = find_uicomponent(food_holder, "icon")
+        icon:SetImagePath("ui/skins/default/skaven_food_icon.png")
+    end
+
+    local cooldown_holder = core:get_or_create_component("cooldown_holder", "ui/vandy_lib/cost_holder", deets_holder)
+    cooldown_holder:SetDockingPoint(2)
+    cooldown_holder:SetDockOffset(20, 0)
+    cooldown_holder:SetTooltipText("Cooldown Time||Blerp.", true)
+
+    do
+        local dy = find_uicomponent(cooldown_holder, "dy_cost")
+        dy:SetImagePath("ui/skins/default/cooldown_banner.png")
+
+        local icon = find_uicomponent(cooldown_holder, "icon")
+        icon:SetVisible(false)
+    end
+
+    local duration_holder = core:get_or_create_component("duration_holder", "ui/vandy_lib/cost_holder", deets_holder)
+    duration_holder:SetDockingPoint(2)
+    duration_holder:SetDockOffset(20, 40)
+    duration_holder:SetTooltipText("Duration||Blep", true)
+
+    do
+        local dy = find_uicomponent(duration_holder, "dy_cost")
+        dy:SetImagePath("ui/skins/default/turns_banner.png")
+
+        local icon = find_uicomponent(duration_holder, "icon")
+        icon:SetVisible(false)
+    end
+
+
+    --[[local costs_holder = core:get_or_create_component("costs_holder", "ui/vandy_lib/script_dummy", dummy)
     costs_holder:Resize(dummy:Width(), dummy:Height() * 0.29)
     costs_holder:SetDockingPoint(8)
     costs_holder:SetDockOffset(0, -(h_diff/2))
@@ -696,14 +849,23 @@ function ui_obj:create_context_column()
         local w,h = costs_title:TextDimensionsForText("Passive costs per turn:")
         costs_title:ResizeTextResizingComponentToInitialSize(w, h)
         costs_title:SetStateText("Passive costs per turn:")
-    end
+    end]]
+
+    bmm:log("context menu created")
 end
 
-function ui_obj:populate_panel_on_broodmother_selected(broodmother_obj)
+function ui_obj:populate_panel_on_broodmother_selected(slot_num)
     bmm:log("Populating on broodmother selected!")
+
+    self.selected_slot = slot_num
+    local slots = self.slots
+
+    local broodmother_key = slots[slot_num]
+    local broodmother_obj = bmm:get_broodmother_with_key(broodmother_key)
 
     local panel = find_uicomponent(self.panel_name)
     local broodmother_column = find_uicomponent(panel, "broodmother_column")
+    local broodmother_holder = find_uicomponent(broodmother_column, "dummy", "broodmother_holder")
     local broodmother_details = find_uicomponent(broodmother_column, "dummy", "broodmother_details")
     local broodmother_title = find_uicomponent(broodmother_details, "broodmother_title", "name")
     local broodmother_location = find_uicomponent(broodmother_details, "broodmother_location")
@@ -721,7 +883,29 @@ function ui_obj:populate_panel_on_broodmother_selected(broodmother_obj)
     self:set_state_text_with_resize(broodmother_location, "Location: "..location_text)
 
     -- set all other broodmothers to their proper states
+    for j = 1, #slots do
+        local slot = slots[j]
+        bmm:log("checking slot num "..tostring(j))
+        bmm:log(slot)
 
+        if slot == "open" or slot == "locked" then
+            -- do nothing?
+        else
+            bmm:log("getting slot uic")
+            local slot_uic = find_uicomponent(broodmother_holder, "slot_"..tostring(j))
+            bmm:log("is uic: "..tostring(is_uicomponent(slot_uic)))
+            local broodmother_uic = UIComponent(slot_uic:Find(0))
+            bmm:log("getting broodmama uic: "..tostring(is_uicomponent(broodmother_uic)))
+
+            if j == slot_num then
+                bmm:log("at currently selected, setting down")
+                broodmother_uic:SetState("down")
+            else
+                bmm:log("setting active")
+                broodmother_uic:SetState("active")
+            end
+        end
+    end
 
     -- clear any extant traits
     list_box:DestroyChildren()
@@ -835,11 +1019,18 @@ function ui_obj:create_panel()
     broodmother_column:SetDockingPoint(3)
     broodmother_column:SetDockOffset(-gap, 50)
 
+    -- catch any errors with creating the three columns
     local ok, err = pcall(function()
     self:create_actions_column()
     self:create_broodmother_column()
     self:create_context_column()
+
+    self:populate_panel_on_broodmother_selected(1)
     end) if not ok then bmm:error(err) end
+
+    -- TODO make sure this doesn't break when there are no bm's
+    -- auto-select the first slot
+
 end
 
 

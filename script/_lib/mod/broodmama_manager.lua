@@ -439,6 +439,43 @@ function broodmama_manager:get_broodmothers()
     return self.broodmothers
 end
 
+function broodmama_manager:get_broodmother_with_key(key)
+    if not is_string(key) then
+        -- errmsg
+        return false
+    end
+
+    local broodies = self.broodmothers
+    for i = 1, #broodies do
+        local brooder = broodies[i]
+        if brooder:get_key() == key then
+            return brooder
+        end
+    end 
+
+    -- errmsg, none found
+    return nil
+end
+
+function broodmama_manager:get_broodmother_with_index(index)
+    if not is_number(index) then
+        -- errmsg
+        return false
+    end
+
+    local broodies = self:get_broodmothers()
+
+    for i = 1, #broodies do
+        local broooooooo = broodies[i]
+        if broooooooo:get_index() == index then
+            return broooooooo
+        end
+    end
+
+    -- errmsg; none found
+    return nil
+end
+
 function broodmama_manager:get_broodmothers_for_faction(faction_key)
     local blist = self.broodmothers
 
