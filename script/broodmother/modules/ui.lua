@@ -29,6 +29,22 @@ function ui_obj:delete_component(uic)
     dummy:DestroyChildren()
 end
 
+function ui_obj:set_state_text_with_resize(uic, text)
+    if not is_uicomponent(uic) then
+        -- errmsg
+        return false
+    end
+
+    if not is_string(text) then
+        -- errmsg
+        return false
+    end
+
+    local w,h = uic:TextDimensionsForText(text)
+    uic:ResizeTextResizingComponentToInitialSize(w, h)
+    uic:SetStateText(text)
+end
+
 function ui_obj:clear_listeners()
     for i = 1, #self.listener_names do
         core:remove_listener(self.listener_names[i])
@@ -414,31 +430,42 @@ function ui_obj:create_broodmother_column()
     local broodmothers = bmm:get_broodmothers_for_faction(cm:get_local_faction(true))
 
     local locked = false
+    local active = true
 
     for i = 1, index do
         local test_broodmother = broodmothers[i]
 
-        local broodmother_key = "broodmother_"..tostring(i)
+        local broodmother_holder = nil
+        local broodmother_uic = nil
 
-        -- check if there's a broodmother for this slot; if not, set it inactive and what not
-        --if test_broodmother then
-
-        local broodmother_holder = core:get_or_create_component(broodmother_key, "ui/vandy_lib/script_dummy", button_holder)
+        broodmother_holder = core:get_or_create_component("slot_"..tostring(i), "ui/vandy_lib/script_dummy", button_holder)
         broodmother_holder:Resize(button_holder:Width() * 0.5, button_holder:Height() * 0.5)
         broodmother_holder:SetDockingPoint(i_to_docking_point[i])
-
-        local broodmother_uic = core:get_or_create_component(broodmother_key, "ui/broodmother/templates/broodmother_icon", broodmother_holder)
-        --broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
-        local num = cm:random_number(4, 1)
-        broodmother_uic:SetImagePath("ui/broodmother/Broodmama_generic_"..tostring(num).."_inactive.png", 0)
-
-        -- overwrite the "active" image 
-        --[[for j = 1, #image_paths do
-            broodmother_uic:SetImagePath(prefix .. "Broodmama_open_slot.png", j)
-        end]]
-
+        
+        -- check if this is an empty slot or a filled one
         if test_broodmother then
-            broodmother_uic:SetState("active")
+            
+            local broodmother_key = test_broodmother:get_key()
+            broodmother_uic = core:get_or_create_component(broodmother_key, "ui/broodmother/templates/broodmother_icon", broodmother_holder)
+
+            --broodmother_uic:SetImagePath("ui/skins/default/1x1_transparent_white.png", 0)
+            local num = cm:random_number(4, 1)
+
+            -- TODO save the image to the broodmother instead of grabbing it here
+            broodmother_uic:SetImagePath("ui/broodmother/Broodmama_generic_"..tostring(num).."_inactive.png", 0)
+
+            -- overwrite the "active" image 
+            --[[for j = 1, #image_paths do
+                broodmother_uic:SetImagePath(prefix .. "Broodmama_open_slot.png", j)
+            end]]
+
+            if active then
+                broodmother_uic:SetState("active")
+                active = false
+            else
+                broodmother_uic:SetState("inactive")
+                active = true
+            end
 
             self:add_listener("select_broodmother")
             core:add_listener(
@@ -453,15 +480,10 @@ function ui_obj:create_broodmother_column()
                 true
             )
         else
-            if locked then
-                bmm:log("Setting as locked!")
-                broodmother_uic:SetState("locked")
-                locked = false
-            else
-                bmm:log("Setting as open!")
-                broodmother_uic:SetState("open")
-                locked = true
-            end
+            broodmother_uic = core:get_or_create_component("empty_slot", "ui/broodmother/templates/broodmother_icon", broodmother_holder)
+
+            -- TODO test if it's locked or just empty
+            broodmother_uic:SetState("locked")
         end
 
         -- set the size to 1.4x larger
@@ -488,10 +510,18 @@ function ui_obj:create_broodmother_column()
     broodmother_details:SetCanResizeWidth(true) broodmother_details:SetCanResizeHeight(true)
     broodmother_details:Resize(dummy:Width() * 0.95, dummy:Height() * 0.58)
 
-    local broodmother_name = core:get_or_create_component("broodmother_name", "ui/templates/panel_subtitle", broodmother_details)
-    broodmother_name:Resize(broodmother_details:Width() * 0.9, broodmother_name:Height())
-    broodmother_name:SetDockingPoint(2)
-    broodmother_name:SetDockOffset(0, 10)
+    local broodmother_title = core:get_or_create_component("broodmother_title", "ui/templates/panel_subtitle", broodmother_details)
+    broodmother_title:Resize(broodmother_details:Width() * 0.9, broodmother_title:Height())
+    broodmother_title:SetDockingPoint(2)
+    broodmother_title:SetDockOffset(0, 10)
+
+    local name = core:get_or_create_component("name", "ui/vandy_lib/text/la_gioconda", broodmother_title)
+    name:SetVisible(true)
+    name:SetStateText("")
+    
+    name:SetDockingPoint(5)
+    name:SetDockOffset(0, 0)
+    name:Resize(broodmother_title:Width() * 0.9, broodmother_title:Height() * 0.9)
     
     
     local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/script_dummy", broodmother_details)
@@ -618,8 +648,18 @@ function ui_obj:populate_panel_on_broodmother_selected(broodmother_obj)
 
     local panel = find_uicomponent(self.panel_name)
     local broodmother_column = find_uicomponent(panel, "broodmother_column")
-    local traits_panel = find_uicomponent(broodmother_column, "dummy", "broodmother_details", "traits_panel")
+    local broodmother_details = find_uicomponent(broodmother_column, "dummy", "broodmother_details")
+    local broodmother_title = find_uicomponent(broodmother_details, "broodmother_title", "name")
+
+    local traits_panel = find_uicomponent(broodmother_column, "traits_panel")
     local list_box = find_uicomponent(traits_panel, "list_view", "list_clip", "list_box")
+
+    -- set the broodmother name on the title bar
+    local broodmother_name = broodmother_obj:get_name()
+    self:set_state_text_with_resize(broodmother_title, broodmother_name)
+
+    -- set all other broodmothers to their proper states
+
 
     -- clear any extant traits
     list_box:DestroyChildren()

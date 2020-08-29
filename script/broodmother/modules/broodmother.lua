@@ -17,14 +17,32 @@ function broodmother_obj.new(faction_key, region_key)
     new_broodmother.faction_key = faction_key
     new_broodmother.location = region_key
     new_broodmother.traits = {}
+    new_broodmother.name = "Broodmother"
 
     new_broodmother.index = bmm:get_next_unique_counter()
 
     return new_broodmother
 end
 
+function broodmother_obj:get_name()
+    return self.name
+end
+
+function broodmother_obj:set_name(text)
+    if not is_string(text) then
+        -- errmsg
+        return false
+    end
+
+    self.name = text
+end
+
 function broodmother_obj:get_index()
     return self.index
+end
+
+function broodmother_obj:get_key()
+    return "broodmother_"..tostring(self:get_index())
 end
 
 function broodmother_obj:add_trait(trait_key)
