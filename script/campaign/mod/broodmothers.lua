@@ -13,6 +13,8 @@ local function ui_init()
 
     -- add the new button, and use "Layout()" on the parent, which is needed to refresh the spacing of the buttons and add the new one to the list.
     local new_uic = core:get_or_create_component("button_broodmother", "ui/templates/round_large_button", docker)
+    new_uic:SetImagePath("ui/skins/default/broodmother_icon.png")
+    
     docker:Layout()
 
     -- listen for the Broodmother button being pressed
