@@ -707,7 +707,7 @@ function ui_obj:create_context_column()
 
     bmm:log("creating dummy")
     local dummy = core:get_or_create_component("dummy", "ui/vandy_lib/custom_image_tiled", context_column)
-    bmm:log("created") 
+    bmm:log("created")
 
     dummy:SetVisible(true)
     dummy:SetState('custom_state_2')
@@ -785,8 +785,8 @@ function ui_obj:create_context_column()
 
     -- hold gold and food cost on the left, and the cooldown and duration on the right
     local gold_holder = core:get_or_create_component("gold_holder", "ui/vandy_lib/cost_holder", deets_holder)
-    gold_holder:SetDockingPoint(1)
-    gold_holder:SetDockOffset(10, 0)
+    gold_holder:SetDockingPoint(2)
+    gold_holder:SetDockOffset(-75, 0)
     gold_holder:SetTooltipText("Gold cost||The cost in gold, duh.", true)
 
     do
@@ -795,8 +795,8 @@ function ui_obj:create_context_column()
     end
 
     local food_holder = core:get_or_create_component("food_holder", "ui/vandy_lib/cost_holder", deets_holder)
-    food_holder:SetDockingPoint(1)
-    food_holder:SetDockOffset(10, 40)
+    food_holder:SetDockingPoint(2)
+    food_holder:SetDockOffset(-75, 40)
     food_holder:SetTooltipText("Food cost||The cost in food.", true)
 
     do
@@ -806,29 +806,39 @@ function ui_obj:create_context_column()
 
     local cooldown_holder = core:get_or_create_component("cooldown_holder", "ui/vandy_lib/cost_holder", deets_holder)
     cooldown_holder:SetDockingPoint(2)
-    cooldown_holder:SetDockOffset(20, 0)
+    cooldown_holder:SetDockOffset(75, 0)
     cooldown_holder:SetTooltipText("Cooldown Time||Blerp.", true)
 
     do
-        local dy = find_uicomponent(cooldown_holder, "dy_cost")
-        dy:SetImagePath("ui/skins/default/cooldown_banner.png")
-
         local icon = find_uicomponent(cooldown_holder, "icon")
-        icon:SetVisible(false)
+        icon:SetImagePath("ui/skins/default/icon_cooldown_26.png")
     end
 
     local duration_holder = core:get_or_create_component("duration_holder", "ui/vandy_lib/cost_holder", deets_holder)
     duration_holder:SetDockingPoint(2)
-    duration_holder:SetDockOffset(20, 40)
+    duration_holder:SetDockOffset(75, 40)
     duration_holder:SetTooltipText("Duration||Blep", true)
 
     do
-        local dy = find_uicomponent(duration_holder, "dy_cost")
-        dy:SetImagePath("ui/skins/default/turns_banner.png")
-
         local icon = find_uicomponent(duration_holder, "icon")
-        icon:SetVisible(false)
+        icon:SetImagePath("ui/skins/default/icon_hourglass.png")
     end
+
+    local buttons_holder = core:get_or_create_component("buttons_holder", "ui/vandy_lib/script_dummy", rites_holder)
+    buttons_holder:SetDockingPoint(8)
+    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.2)
+
+    local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/script_dummy", rites_holder)
+    effects_holder:SetDockingPoint(2)
+    
+    local remaining_height = dummy:Height() - deets_holder:Height() - rites_flavour:Height() - rites_title:Height() - buttons_holder:Height() - 30 
+    effects_holder:Resize(dummy:Width() * 0.9, remaining_height)
+    effects_holder:SetDockOffset(0, deets_holder:Height() + rites_flavour:Height() + rites_title:Height() + 15)
+    
+    local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda", effects_holder)
+    text:SetDockingPoint(1)
+    text:SetDockOffset(5, 0)
+    text:SetStateText("This is my effect text.")
 
 
     --[[local costs_holder = core:get_or_create_component("costs_holder", "ui/vandy_lib/script_dummy", dummy)
