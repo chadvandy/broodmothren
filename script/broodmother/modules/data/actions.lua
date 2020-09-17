@@ -44,7 +44,7 @@ return {
             ["food"] = 0,
         },
         ["duration"] = 20,
-        ["effect_bundle"] = "",
+        ["effect_bundle"] = "broodmother_eat",
     },
     quick = {
         ["category_key"] = "improved_incubators",

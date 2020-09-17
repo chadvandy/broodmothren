@@ -11,6 +11,8 @@ local ui_obj = {
     },
 
     selected_slot = 0,
+
+    selected_action = "",
 }
 
 function ui_obj:delete_component(uic)
@@ -117,6 +119,29 @@ local function blank_stuff()
     end
 end
 
+-- called whenever one of the actions is pressed; changes the costs, durations, effects, flavour text, etc., in the left column
+function ui_obj:populate_context_menu_on_press(action_key)
+    if not is_string(action_key) then
+        -- errmsg
+        return false
+    end
+
+    local action = bmm:get_action_with_key(action_key)
+    if not action then
+        -- errmsg
+        return false
+    end
+
+    local panel = find_uicomponent(self.panel_name)
+    local context_column = find_uicomponent(panel, "context_column")
+    local rites_holder = find_uicomponent(context_column, "dummy", "rites_holder")
+
+    local rites_title = find_uicomponent(rites_holder, "rites_title")
+    local rites_flavour = find_uicomponent(rites_holder, "rites_flavour")
+
+    rites_title:SetStateText(effect.get_localised_string(action.text_string))
+end
+
 function ui_obj:create_actions_column()
     local panel = find_uicomponent(self.panel_name)
     local actions_column = find_uicomponent(panel, "actions_column")
@@ -218,7 +243,7 @@ function ui_obj:create_actions_column()
         local category_image_path = category_data.img_path
         local category_text_string = effect.get_localised_string(category_data.text_string)
 
-        local upgrade_keys = category_data.upgrades
+        --local upgrade_keys = category_data.upgrades
         local action_keys = category_data.actions
 
         -- create the positioning component to hold everything for this category
@@ -251,34 +276,63 @@ function ui_obj:create_actions_column()
         category_uic:SetDockingPoint(2)
         category_uic:SetDockOffset(0, 5 + category_title:Height())
 
-        local holder = core:get_or_create_component("holder", "ui/vandy_lib/script_dummy", category_holder)
-        holder:SetDockingPoint(2)
-        holder:SetDockOffset(0, category_uic:Height() + category_title:Height() + 5)
-        holder:Resize(category_holder:Width(), category_holder:Height() - category_uic:Height() - category_title:Height())
-
         local actions_prototype = bmm:get_action_prototype()
         local actions_template = actions_prototype.template_path
         local actions_tt = effect.get_localised_string(actions_prototype.tooltip_string)
 
-        local actions_holder = core:get_or_create_component("actions_holder", actions_template, holder)
-        actions_holder:SetVisible(true)
+        local actions_holder = core:get_or_create_component("action_holder", actions_template, category_holder)
+        actions_holder:SetDockingPoint(2)
+        actions_holder:SetDockOffset(0, category_uic:Height() + category_title:Height() + 5)
+        actions_holder:Resize(category_holder:Width(), category_holder:Height() - category_uic:Height() - category_title:Height())
+
         actions_holder:SetState("custom_state_2")
         actions_holder:SetImagePath("ui/skins/default/parchment_divider.png", 1)
+        actions_holder:SetVisible(true)
+
+        actions_holder:SetTooltipText(actions_tt, true)
+
+        --[[local actions_holder = core:get_or_create_component("actions_holder", actions_template, holder)
 
         actions_holder:SetDockingPoint(2)
         actions_holder:SetDockOffset(0, 0)
         actions_holder:SetCanResizeWidth(true) actions_holder:SetCanResizeHeight(true)
-        actions_holder:Resize(holder:Width(), holder:Height() * 0.49)
+        actions_holder:Resize(holder:Width(), holder:Height())
 
         actions_holder:SetTooltipText(actions_tt, true)
 
         local first = true
-        local second = false
+        local second = false]]
 
-        local pos = 4
+        -- this assigns a position for "i" index - first is top left corner, second is top right corner, etc
+        local i_to_pos = {
+            [1] = 1,
+            [2] = 3,
+            [3] = 7,
+            [4] = 9,
+        }
+
+        core:add_listener(
+            "action_pressed",
+            "ComponentLClickUp",
+            function(context)
+                local uic = UIComponent(context.component)
+                return uicomponent_descended_from(uic, "action_holder")
+            end,
+            function(context)
+                local key = context.string
+                bmm:log("Action pressed: "..key)
+
+                self:populate_context_menu_on_press(key)
+            end,
+            true
+        )
+
         for j = 1, #action_keys do
             local action_key = action_keys[j]
+            local pos = i_to_pos[j]
             local action_data = bmm:get_action_with_key(action_key)
+
+            bmm:log("Creating action: ["..action_key.."]")
 
             local action_text = effect.get_localised_string(action_data.text_string)
             local action_tt = effect.get_localised_string(action_data.tooltip_string)
@@ -292,9 +346,9 @@ function ui_obj:create_actions_column()
 
             local action_holder = core:get_or_create_component("action_holder_"..tostring(j), "ui/vandy_lib/script_dummy", actions_holder)
             action_holder:SetDockingPoint(pos)
-            pos = pos + 1
             action_holder:SetDockOffset(0, 0)
-            action_holder:Resize(actions_holder:Width() / 3, actions_holder:Height())
+            action_holder:Resize(actions_holder:Width() / 2, actions_holder:Height() / 2)
+            action_holder:SetInteractive(false)
 
             local action_uic = core:get_or_create_component(action_key, "ui/vandy_lib/buildingframe", action_holder)
             action_uic:SetDockingPoint(5)
@@ -364,7 +418,7 @@ function ui_obj:create_actions_column()
             food_uic:SetVisible(false)
         end
 
-        local upgrades_prototype = bmm:get_upgrade_prototype()
+        --[[local upgrades_prototype = bmm:get_upgrade_prototype()
         local upgrades_template = upgrades_prototype.template_path
         local upgrades_tt = effect.get_localised_string(upgrades_prototype.tooltip_string)
 
@@ -410,7 +464,7 @@ function ui_obj:create_actions_column()
                 local child = UIComponent(upgrade_uic:Find(z))
                 child:SetVisible(false)
             end
-        end
+        end]]
     end
     bmm:log("Actions column created!")
 end

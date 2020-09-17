@@ -1,3 +1,8 @@
+-- only load this if it's campaign
+if __game_mode ~= __lib_type_campaign then
+    return
+end
+
 -- this is the initialization file that loads up the individual "modules" for UI and Broodmothas
 -- warning: this script probably isn't very beginner-friendly to read. viewer discretion is advised.
 
@@ -30,7 +35,7 @@ local broodmama_manager = {
     },
 
 
-    -- similar to CQI for TQ objects; unique counter to identify broodmothers
+    -- similar to CQI for TW objects; unique counter to identify broodmothers
     broodmother_unique_index = 1,
 
     slots = {
@@ -90,7 +95,6 @@ function broodmama_manager:init()
     self._data.broodmothers = self:load_module("predefined_broodmothers", data_path)
     self._data.categories = self:load_module("categories", data_path)
     self._data.actions = self:load_module("actions", data_path)
-    self._data.upgrades = self:load_module("upgrades", data_path)
 end
 
 function broodmama_manager:load_module(module_name, path)
@@ -275,16 +279,6 @@ function broodmama_manager:get_category_action_keys(key)
     return cat.actions
 end
 
-function broodmama_manager:get_category_upgrade_keys(key)
-    local cat = self:get_category_with_key(key)
-    if not cat then
-        -- errmsg
-        return {}
-    end
-
-    return cat.upgrades
-end
-
 function broodmama_manager:get_actions()
     local retval = {}
     for k, v in pairs(self._data.actions) do
@@ -345,78 +339,18 @@ function broodmama_manager:get_action_category_key(key)
     return dog.category_key
 end
 
-function broodmama_manager:get_action_image_path(key)
+function broodmama_manager:get_action_effect_bundle(key)
     local dog = self:get_action_with_key(key)
     if not dog then
         -- errmsg
         return ""
     end
 
-    return dog.img_path
+    return dog.effect_bundle
 end
 
-function broodmama_manager:get_upgrades()
-    local retval = {}
-    for k,v in pairs(self._data.upgrades) do
-        if k ~= "prototype" then
-            retval[k] = v
-        end
-    end
-
-    return retval
-end
-
-function broodmama_manager:get_upgrade_prototype()
-    return self._data.upgrades.prototype
-end
-
-function broodmama_manager:get_upgrade_with_key(key)
-    if not is_string(key) then
-        -- errmsg
-        return false
-    end
-
-    local test = self:get_upgrades()[key]
-    if not test then
-        -- errmsg
-        return false
-    end
-
-    return test
-end
-
-function broodmama_manager:get_upgrade_text_string(key)
-    local dog = self:get_upgrade_with_key(key)
-    if not dog then
-        -- errmsg
-        return ""
-    end
-
-    return dog.text_string
-end
-
-function broodmama_manager:get_upgrade_tooltip_string(key)
-    local dog = self:get_upgrade_with_key(key)
-    if not dog then
-        -- errmsg
-        return ""
-    end
-
-    return dog.tooltip_string
-end
-
-function broodmama_manager:get_upgrade_category_key(key)
-    local dog = self:get_upgrade_with_key(key)
-    if not dog then
-        -- errmsg
-        return ""
-    end
-
-    return dog.category_key
-end
-
-function broodmama_manager:get_upgrade_image_path(key)
-    local dog = self:get_upgrade_with_key(key)
+function broodmama_manager:get_action_image_path(key)
+    local dog = self:get_action_with_key(key)
     if not dog then
         -- errmsg
         return ""
