@@ -205,21 +205,25 @@ function ui_obj:populate_context_menu_on_press(action_key)
             local effect_txt = common_obj.get_localised_string("effects_description_"..effect_key)
 
             do -- replace "n" with the value, remove "%", and remove "+"
+                local val_txt = tostring(effect_value)
+                local plus_val_txt = val_txt
+                if effect_value > 0 then
+                    plus_val_txt = "+"..val_txt
+                end
+
                 if string.find(effect_txt, "%+n") then
-                    effect_txt = string.gsub(effect_txt, "%%%+n", tostring(effect_value))
+                    effect_txt = string.gsub(effect_txt, "%%%+n", plus_val_txt)
                 else
                     if string.find(effect_txt, "%n") then
-                        effect_txt = string.gsub(effect_txt, "%%n", tostring(effect_value))
+                        effect_txt = string.gsub(effect_txt, "%%n", val_txt)
                     end
                 end
             end
 
             local effect_uic = UIComponent(effects_holder:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
-            effect_uic:Resize(effects_holder:Width() * 0.9, effect_uic:Height())
+            effect_uic:Resize(effects_holder:Width() * 0.9, effects_holder:Height())
             effect_uic:SetDockingPoint(1)
             effect_uic:SetDockOffset(xpos, ypos)
-
-            ypos = ypos + effect_uic:Height() + 10
 
             do -- make the icon UIC
                 local uic = UIComponent(effect_uic:CreateComponent("icon", "ui/templates/custom_image"))
@@ -235,12 +239,14 @@ function ui_obj:populate_context_menu_on_press(action_key)
                 uic:SetImagePath(effect_image_path)
             end
 
+            local hee
+
             do -- make the text UIC
                 local uic = UIComponent(effect_uic:CreateComponent("text", "ui/vandy_lib/text/la_gioconda/unaligned"))
                 uic:SetDockingPoint(4)
                 uic:SetDockOffset(32+5, 0)
 
-                local ow,oh = effect_uic:Width() - 30, uic:Height()
+                local ow,oh = effect_uic:Width() - 30, uic:Height()*2.5
 
                 local w,h = uic:TextDimensionsForText(effect_txt)
                 uic:ResizeTextResizingComponentToInitialSize(w, h)
@@ -249,7 +255,13 @@ function ui_obj:populate_context_menu_on_press(action_key)
 
                 uic:Resize(ow,oh)
                 uic:ResizeTextResizingComponentToInitialSize(ow, oh)
+
+                hee = oh*1.5
             end
+
+            effect_uic:Resize(effects_holder:Width() * 0.95, hee)
+
+            ypos = ypos + effect_uic:Height() + 10
         end
 
 
