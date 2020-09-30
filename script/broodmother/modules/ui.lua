@@ -139,7 +139,148 @@ function ui_obj:populate_context_menu_on_press(action_key)
     local rites_title = find_uicomponent(rites_holder, "rites_title")
     local rites_flavour = find_uicomponent(rites_holder, "rites_flavour")
 
-    rites_title:SetStateText(effect.get_localised_string(action.text_string))
+    -- edit the "Rites Title" UIC to the selected action, and make sure the new text is centered
+    do
+        local txt = effect.get_localised_string(action.text_string)
+
+        local ow, oh = rites_title:Width(), rites_title:Height()
+
+        local w,h = rites_title:TextDimensionsForText(txt)
+        rites_title:ResizeTextResizingComponentToInitialSize(w, h)
+
+        rites_title:SetStateText(txt)
+
+        rites_title:Resize(ow, oh)
+        rites_title:ResizeTextResizingComponentToInitialSize(ow, oh)
+    end
+
+    -- ditto with rites flavour here
+    do
+
+    end
+
+    -- apply gold/food costs and duration/cooldown timers
+    local deets_holder = find_uicomponent(rites_holder, "deets_holder")
+    local gold_holder = find_uicomponent(deets_holder, "gold_holder")
+    local food_holder = find_uicomponent(deets_holder, "food_holder")
+    local cooldown_holder = find_uicomponent(deets_holder, "cooldown_holder")
+    local duration_holder = find_uicomponent(deets_holder, "duration_holder")
+
+    
+    -- run through the effects list, and apply everything there
+    local effects_holder = find_uicomponent(rites_holder, "effects_holder")
+    
+    -- kill any extant effects
+    effects_holder:DestroyChildren()
+
+    local ypos = 10 -- ydock offset for effects
+    local xpos = 15 -- ditto, x
+
+    local effect_bundle = action.effect_bundle
+    if not effect_bundle then
+        -- issue
+    else
+        local eb_key = effect_bundle.key
+        local effects = effect_bundle.effects
+
+        local duration = action.duration
+
+        if not eb_key then
+            -- skip it, throw error
+            return
+        end
+
+        if not is_table(effects) then
+            -- ditto
+            return
+        end
+
+        local common_obj = effect
+
+        for i = 1, #effects do
+            local effect = effects[i]
+            local effect_key = effect.key
+            local effect_image_path = effect.image_path
+            local effect_value = effect.value
+            local effect_txt = common_obj.get_localised_string("effects_description_"..effect_key)
+
+            do -- replace "n" with the value, remove "%", and remove "+"
+                if string.find(effect_txt, "%+n") then
+                    effect_txt = string.gsub(effect_txt, "%%%+n", tostring(effect_value))
+                else
+                    if string.find(effect_txt, "%n") then
+                        effect_txt = string.gsub(effect_txt, "%%n", tostring(effect_value))
+                    end
+                end
+            end
+
+            local effect_uic = UIComponent(effects_holder:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
+            effect_uic:Resize(effects_holder:Width() * 0.9, effect_uic:Height())
+            effect_uic:SetDockingPoint(1)
+            effect_uic:SetDockOffset(xpos, ypos)
+
+            ypos = ypos + effect_uic:Height() + 10
+
+            do -- make the icon UIC
+                local uic = UIComponent(effect_uic:CreateComponent("icon", "ui/templates/custom_image"))
+                uic:SetDockingPoint(4)
+                uic:SetDockOffset(8, 0)
+
+                uic:SetCanResizeWidth(true) uic:SetCanResizeHeight(true)
+                uic:Resize(24, 24)
+                uic:SetCanResizeWidth(false) uic:SetCanResizeHeight(false)
+
+                uic:SetVisible(true)
+                uic:SetState("custom_state_1")
+                uic:SetImagePath(effect_image_path)
+            end
+
+            do -- make the text UIC
+                local uic = UIComponent(effect_uic:CreateComponent("text", "ui/vandy_lib/text/la_gioconda/unaligned"))
+                uic:SetDockingPoint(4)
+                uic:SetDockOffset(32+5, 0)
+
+                local ow,oh = effect_uic:Width() - 30, uic:Height()
+
+                local w,h = uic:TextDimensionsForText(effect_txt)
+                uic:ResizeTextResizingComponentToInitialSize(w, h)
+
+                uic:SetStateText(effect_txt)
+
+                uic:Resize(ow,oh)
+                uic:ResizeTextResizingComponentToInitialSize(ow, oh)
+            end
+        end
+
+
+        --[[ this way does not work :)
+        -- create a custom effect 
+        local custom_effect_bundle = cm:create_new_custom_effect_bundle(eb_key)
+
+        local effects_list = custom_effect_bundle:effects()
+        for i = 0, effects_list:num_items() -1 do
+            local effect = effects_list:item_at(i)
+            local effect_key = effect:key()
+            local effect_value = effect:value()
+
+            local effect_txt = effect.get_localised_string("effects_description_"..effect_key)
+            local x, z = effect_txt:find("%+n")
+            if x then
+                effect_txt = string.gsub(effect_txt, "%+n", tostring(effect_value))
+            end
+
+            local effect_uic = UIComponent(effects_holder:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
+            effect_uic:Resize(effects_holder:Width() * 0.9, effect_uic:Height())
+            effect_uic:SetDockingPoint(1)
+            effect_uic:SetDockingPoint(xpos, ypos)
+
+            ypos = ypos + effect_uic:Height() + 10
+
+            local effect_icon_uic = UIComponent(effect_uic:CreateComponent("icon", "ui/templates/custom_image"))
+            --effect_i
+            -- shit just realized I have to hard-code every icon
+        end]]
+    end
 end
 
 function ui_obj:create_actions_column()
@@ -176,7 +317,7 @@ function ui_obj:create_actions_column()
     title:SetDockOffset(0, title:Height() * 0.1)
 
     -- create the actual text for the title
-    local title_text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda", title)
+    local title_text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/center", title)
     title_text:SetVisible(true)
 
     title_text:SetDockingPoint(5)
@@ -656,7 +797,7 @@ function ui_obj:create_broodmother_column()
     broodmother_title:SetDockingPoint(2)
     broodmother_title:SetDockOffset(0, 10)
 
-    local name = core:get_or_create_component("name", "ui/vandy_lib/text/la_gioconda", broodmother_title)
+    local name = core:get_or_create_component("name", "ui/vandy_lib/text/la_gioconda/center", broodmother_title)
     name:SetVisible(true)
     name:SetStateText("")
     
@@ -690,7 +831,7 @@ function ui_obj:create_broodmother_column()
     traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 20)
     traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
     
-    local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda", traits_panel)
+    local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda/unaligned", traits_panel)
     text:SetVisible(true)
 
     text:SetDockingPoint(2)
@@ -858,24 +999,24 @@ function ui_obj:create_context_column()
         icon:SetImagePath("ui/skins/default/skaven_food_icon.png")
     end
 
-    local cooldown_holder = core:get_or_create_component("cooldown_holder", "ui/vandy_lib/cost_holder", deets_holder)
-    cooldown_holder:SetDockingPoint(2)
-    cooldown_holder:SetDockOffset(75, 0)
-    cooldown_holder:SetTooltipText("Cooldown Time||Blerp.", true)
-
-    do
-        local icon = find_uicomponent(cooldown_holder, "icon")
-        icon:SetImagePath("ui/skins/default/icon_cooldown_26.png")
-    end
-
     local duration_holder = core:get_or_create_component("duration_holder", "ui/vandy_lib/cost_holder", deets_holder)
     duration_holder:SetDockingPoint(2)
-    duration_holder:SetDockOffset(75, 40)
+    duration_holder:SetDockOffset(75, 0)
     duration_holder:SetTooltipText("Duration||Blep", true)
 
     do
         local icon = find_uicomponent(duration_holder, "icon")
         icon:SetImagePath("ui/skins/default/icon_hourglass.png")
+    end
+
+    local cooldown_holder = core:get_or_create_component("cooldown_holder", "ui/vandy_lib/cost_holder", deets_holder)
+    cooldown_holder:SetDockingPoint(2)
+    cooldown_holder:SetDockOffset(75, 40)
+    cooldown_holder:SetTooltipText("Cooldown Time||Blerp.", true)
+
+    do
+        local icon = find_uicomponent(cooldown_holder, "icon")
+        icon:SetImagePath("ui/skins/default/icon_cooldown_26.png")
     end
 
     local buttons_holder = core:get_or_create_component("buttons_holder", "ui/vandy_lib/script_dummy", rites_holder)
@@ -889,11 +1030,10 @@ function ui_obj:create_context_column()
     effects_holder:Resize(dummy:Width() * 0.9, remaining_height)
     effects_holder:SetDockOffset(0, deets_holder:Height() + rites_flavour:Height() + rites_title:Height() + 15)
     
-    local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda", effects_holder)
+    local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda/unaligned", effects_holder)
     text:SetDockingPoint(1)
     text:SetDockOffset(5, 0)
     text:SetStateText("This is my effect text.")
-
 
     --[[local costs_holder = core:get_or_create_component("costs_holder", "ui/vandy_lib/script_dummy", dummy)
     costs_holder:Resize(dummy:Width(), dummy:Height() * 0.29)
@@ -995,7 +1135,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
         new_uic:SetDockingPoint(4)
         new_uic:SetDockOffset(0, 0)
 
-        local text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda", dummy_uic)
+        local text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/unaligned", dummy_uic)
         text:SetVisible(true)
         text:SetDockingPoint(4)
         text:SetDockOffset(30, 0)

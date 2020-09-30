@@ -349,6 +349,16 @@ function broodmama_manager:get_action_effect_bundle(key)
     return dog.effect_bundle
 end
 
+function broodmama_manager:get_action_effect_bundle_key(key)
+    local dog = self:get_action_with_key(key)
+    if not dog then
+        -- errmsg
+        return ""
+    end
+
+    return dog.effect_bundle.key
+end
+
 function broodmama_manager:get_action_image_path(key)
     local dog = self:get_action_with_key(key)
     if not dog then

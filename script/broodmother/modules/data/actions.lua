@@ -44,7 +44,31 @@ return {
             ["food"] = 0,
         },
         ["duration"] = 20,
-        ["effect_bundle"] = "broodmother_eat",
+
+
+        ["effect_bundle"] = {
+            ["key"] = "broodmother_eat",
+            ["effects"] = {
+                {
+                    ["key"] = "wh2_main_pooled_resource_skaven_food_rite",
+                    ["image_path"] = "ui/campaign ui/effect_bundles/pooled_resource_food.png",
+                    ["value"] = 5,
+                    ["effect_scope"] = "province_to_province_own",
+                },
+                {
+                    ["key"] = "wh2_main_effect_tech_recruitment_cost_reduction_skv_slave_clanrats",
+                    ["image_path"] = "ui/campaign ui/effect_bundles/treasury.png",
+                    ["value"] = 25,
+                    ["effect_scope"] = "province_to_province_own",
+                },
+                {
+                    ["key"] = "wh_main_effect_growth_all",
+                    ["image_path"] = "ui/campaign ui/effect_bundles/growth.png",
+                    ["value"] = -10,
+                    ["effect_scope"] = "province_to_province_own",
+                },
+            }
+        },
     },
     quick = {
         ["category_key"] = "improved_incubators",
