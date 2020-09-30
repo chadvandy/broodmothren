@@ -942,7 +942,7 @@ function ui_obj:create_context_column()
     local rites_holder = core:get_or_create_component("rites_holder", "ui/vandy_lib/script_dummy", dummy)
     bmm:log("done")
 
-    rites_holder:Resize(dummy:Width(), dummy:Height() * 0.7)
+    rites_holder:Resize(dummy:Width(), dummy:Height())
     rites_holder:SetDockingPoint(2)
     rites_holder:SetDockOffset(0, (h_diff/2))
 
@@ -1044,7 +1044,19 @@ function ui_obj:create_context_column()
 
     local buttons_holder = core:get_or_create_component("buttons_holder", "ui/vandy_lib/script_dummy", rites_holder)
     buttons_holder:SetDockingPoint(8)
-    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.2)
+    buttons_holder:SetDockOffset(0, 0)
+    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.1)
+
+    do
+        local perform_button = core:get_or_create_component("perform", "ui/templates/square_large_text_button", buttons_holder)
+        perform_button:SetDockingPoint(5)
+        perform_button:SetDockOffset(0, 0)
+
+        perform_button:SetState("active")
+
+        local txt = UIComponent(perform_button:Find("button_txt"))
+        txt:SetStateText("Perform")
+    end
 
     local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", rites_holder)
     effects_holder:SetVisible(true)
