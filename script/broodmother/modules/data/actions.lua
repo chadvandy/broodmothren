@@ -54,18 +54,21 @@ return {
                     ["image_path"] = "ui/campaign ui/effect_bundles/pooled_resource_food.png",
                     ["value"] = 5,
                     ["effect_scope"] = "province_to_province_own",
+                    good = true,
                 },
                 {
                     ["key"] = "wh2_main_effect_tech_recruitment_cost_reduction_skv_slave_clanrats",
                     ["image_path"] = "ui/campaign ui/effect_bundles/treasury.png",
                     ["value"] = 25,
                     ["effect_scope"] = "province_to_province_own",
+                    good = true,
                 },
                 {
                     ["key"] = "wh_main_effect_growth_all",
                     ["image_path"] = "ui/campaign ui/effect_bundles/growth.png",
                     ["value"] = -10,
                     ["effect_scope"] = "province_to_province_own",
+                    good = false,
                 },
             }
         },

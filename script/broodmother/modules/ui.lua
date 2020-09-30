@@ -174,7 +174,7 @@ function ui_obj:populate_context_menu_on_press(action_key)
     effects_holder:DestroyChildren()
 
     local ypos = 10 -- ydock offset for effects
-    local xpos = 15 -- ditto, x
+    local xpos = 5 -- ditto, x
 
     local effect_bundle = action.effect_bundle
     if not effect_bundle then
@@ -202,7 +202,16 @@ function ui_obj:populate_context_menu_on_press(action_key)
             local effect_key = effect.key
             local effect_image_path = effect.image_path
             local effect_value = effect.value
-            local effect_txt = common_obj.get_localised_string("effects_description_"..effect_key)
+            local effect_scope_key = effect.effect_scope
+            local effect_txt = common_obj.get_localised_string("effects_description_"..effect_key) .. common_obj.get_localised_string("campaign_effect_scopes_localised_text_"..effect_scope_key)
+
+            local good = effect.good
+
+            if good then
+                effect_txt = "[[col:dark_g]]" .. effect_txt .. "[[/col]]"
+            else
+                effect_txt = "[[col:dark_r]]" .. effect_txt .. "[[/col]]"
+            end
 
             do -- replace "n" with the value, remove "%", and remove "+"
                 local val_txt = tostring(effect_value)
@@ -221,7 +230,7 @@ function ui_obj:populate_context_menu_on_press(action_key)
             end
 
             local effect_uic = UIComponent(effects_holder:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
-            effect_uic:Resize(effects_holder:Width() * 0.9, effects_holder:Height())
+            effect_uic:Resize(effects_holder:Width() * 0.98, effect_uic:Height())
             effect_uic:SetDockingPoint(1)
             effect_uic:SetDockOffset(xpos, ypos)
 
@@ -242,11 +251,11 @@ function ui_obj:populate_context_menu_on_press(action_key)
             local hee
 
             do -- make the text UIC
-                local uic = UIComponent(effect_uic:CreateComponent("text", "ui/vandy_lib/text/la_gioconda/unaligned"))
+                local uic = UIComponent(effect_uic:CreateComponent("text", "ui/vandy_lib/text/la_gioconda/left"))
                 uic:SetDockingPoint(4)
                 uic:SetDockOffset(32+5, 0)
 
-                local ow,oh = effect_uic:Width() - 30, uic:Height()*2.5
+                local ow,oh = effect_uic:Width() - 30, uic:Height()*2.1
 
                 local w,h = uic:TextDimensionsForText(effect_txt)
                 uic:ResizeTextResizingComponentToInitialSize(w, h)
@@ -256,12 +265,14 @@ function ui_obj:populate_context_menu_on_press(action_key)
                 uic:Resize(ow,oh)
                 uic:ResizeTextResizingComponentToInitialSize(ow, oh)
 
-                hee = oh*1.5
+                hee = oh*1.01
             end
 
-            effect_uic:Resize(effects_holder:Width() * 0.95, hee)
+            effect_uic:Resize(effects_holder:Width() * 0.98, hee)
 
-            ypos = ypos + effect_uic:Height() + 10
+            local _,h = effect_uic:Bounds()
+
+            ypos = ypos + h + 10
         end
 
 
@@ -936,7 +947,7 @@ function ui_obj:create_context_column()
     rites_holder:SetDockOffset(0, (h_diff/2))
 
     bmm:log("creating rites_title")
-    local rites_title = core:get_or_create_component("rites_title", "ui/vandy_lib/text/la_gioconda_uppercase", rites_holder)
+    local rites_title = core:get_or_create_component("rites_title", "ui/vandy_lib/text/la_gioconda/center", rites_holder)
     bmm:log("done") 
 
     rites_title:Resize(rites_holder:Width() * 0.95, rites_title:Height())
@@ -1035,7 +1046,10 @@ function ui_obj:create_context_column()
     buttons_holder:SetDockingPoint(8)
     buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.2)
 
-    local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/script_dummy", rites_holder)
+    local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", rites_holder)
+    effects_holder:SetVisible(true)
+    effects_holder:SetState("custom_state_2")
+    effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
     effects_holder:SetDockingPoint(2)
     
     local remaining_height = dummy:Height() - deets_holder:Height() - rites_flavour:Height() - rites_title:Height() - buttons_holder:Height() - 30 
