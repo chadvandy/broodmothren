@@ -745,7 +745,6 @@ function ui_obj:create_broodmother_column()
             local img_path = test_broodmother:get_base_image()
             bmm:log(img_path)
 
-            -- TODO save the image to the broodmother instead of grabbing it here
             broodmother_uic:SetImagePath(img_path, 0)
 
             -- overwrite the "active" image 
@@ -791,9 +790,9 @@ function ui_obj:create_broodmother_column()
             end
         end
 
-        -- set the size to 1.4x larger
+        -- set the size to 2.4x larger
         broodmother_uic:SetCanResizeWidth(true) broodmother_uic:SetCanResizeHeight(true)
-        broodmother_uic:Resize(broodmother_uic:Width() * 1.4, broodmother_uic:Height() * 1.4)
+        broodmother_uic:Resize(broodmother_uic:Width() * 2.4, broodmother_uic:Height() * 2.4)
         broodmother_uic:SetCanResizeWidth(false) broodmother_uic:SetCanResizeHeight(false)
 
         broodmother_uic:SetDockingPoint(5)
@@ -848,8 +847,13 @@ function ui_obj:create_broodmother_column()
 
     div:SetDockingPoint(8)
     div:SetDockOffset(0, 15)
-    
-    local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/script_dummy", broodmother_details)
+
+    -- TODO add in a proper title a la the character details sheet    
+    local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/custom_image_tiled", broodmother_details)
+    traits_panel:SetVisible(true)
+    traits_panel:SetState("custom_state_2")
+    traits_panel:SetImagePath("ui/skins/default/parchment_divider.png", 1)
+
     traits_panel:SetDockingPoint(2)
     traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 20)
     traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
@@ -872,19 +876,19 @@ function ui_obj:create_broodmother_column()
     local remaining_height = traits_panel:Height() - text:Height()
 
     list_view:SetCanResizeWidth(true) list_view:SetCanResizeHeight(true)
-    list_view:Resize(remaining_width, remaining_height)
+    list_view:Resize(remaining_width -30, remaining_height -30)
 
     local list_clip = find_uicomponent(list_view, "list_clip")
     list_clip:SetCanResizeWidth(true) list_clip:SetCanResizeHeight(true)
     list_clip:SetDockingPoint(0)
     list_clip:SetDockOffset(0, 0)
-    list_clip:Resize(remaining_width - 30, remaining_height - 30)
+    list_clip:Resize(remaining_width, remaining_height)
 
     local list_box = find_uicomponent(list_clip, "list_box")
     list_box:SetCanResizeWidth(true) list_box:SetCanResizeHeight(true)
     list_box:SetDockingPoint(1)
     list_box:SetDockOffset(0, 0)
-    list_box:Resize(remaining_width - 30, remaining_height - 30)
+    list_box:Resize(remaining_width, remaining_height)
 
     local l_handle = find_uicomponent(list_view, "vslider")
     l_handle:SetDockingPoint(6)
@@ -900,9 +904,9 @@ function ui_obj:create_broodmother_column()
     effects_holder:SetDockingPoint(8)
     effects_holder:SetDockOffset(0, -10)
 
-    effects_holder:SetImagePath("ui/skins/warhammer2/panel_leather_frame_purple.png", 1)
+    effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
 
-    local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
+    --[[local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
     div:SetVisible(true)
     div:SetCanResizeWidth(true) div:SetCanResizeHeight(true)
     div:Resize(6, effects_holder:Height() * 0.98)
@@ -912,7 +916,7 @@ function ui_obj:create_broodmother_column()
     div:SetImagePath("ui/skins/warhammer2/slider_vertical_mid.png", 0)
 
     div:SetDockingPoint(5)
-    div:SetDockOffset(0, 0)
+    div:SetDockOffset(0, 0)]]
 
     bmm:log("broodmother column created")
 end
@@ -982,7 +986,7 @@ function ui_obj:create_context_column()
     rites_flavour:SetVisible(true)
 
     rites_flavour:SetCanResizeWidth(true) rites_flavour:SetCanResizeHeight(true)
-    rites_flavour:Resize(rites_holder:Width() * 0.8, rites_title:Height() * 3)
+    rites_flavour:Resize(rites_holder:Width() * 0.8, rites_title:Height() * 8)
 
     rites_flavour:SetDockingPoint(2)
     rites_flavour:SetDockOffset(0, rites_title:Height() + 25)
@@ -1045,7 +1049,7 @@ function ui_obj:create_context_column()
     local buttons_holder = core:get_or_create_component("buttons_holder", "ui/vandy_lib/script_dummy", rites_holder)
     buttons_holder:SetDockingPoint(8)
     buttons_holder:SetDockOffset(0, 0)
-    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.1)
+    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.05)
 
     do
         local perform_button = core:get_or_create_component("perform", "ui/templates/square_large_text_button", buttons_holder)
@@ -1068,10 +1072,10 @@ function ui_obj:create_context_column()
     effects_holder:Resize(dummy:Width() * 0.9, remaining_height)
     effects_holder:SetDockOffset(0, deets_holder:Height() + rites_flavour:Height() + rites_title:Height() + 15)
     
-    local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda/unaligned", effects_holder)
+    --[[local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda/unaligned", effects_holder)
     text:SetDockingPoint(1)
     text:SetDockOffset(5, 0)
-    text:SetStateText("This is my effect text.")
+    text:SetStateText("This is my effect text.")]]
 
     --[[local costs_holder = core:get_or_create_component("costs_holder", "ui/vandy_lib/script_dummy", dummy)
     costs_holder:Resize(dummy:Width(), dummy:Height() * 0.29)
@@ -1152,32 +1156,147 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
     -- clear any extant traits
     list_box:DestroyChildren()
 
-    local template_path = "ui/broodmother/templates/"
+    --local template_path = "ui/broodmother/templates/"
 
     -- add in all the traits for this broodie
     local traits = broodmother_obj:get_traits()
 
     for i = 1, #traits do
         bmm:log("Creating trait img "..traits[i])
-        local template = template_path .. traits[i]
 
-        local dummy_uic = core:get_or_create_component(traits[i], "ui/vandy_lib/script_dummy", list_box)
-        dummy_uic:SetVisible(true)
-        dummy_uic:Resize(list_box:Width() * 0.9, list_box:Height() * 0.20)
-        dummy_uic:SetDockingPoint(1)
-        dummy_uic:SetDockOffset(0, 0)
+        local trait_key = traits[i]
 
-        local new_uic = core:get_or_create_component(traits[i], template, dummy_uic)
-        new_uic:SetVisible(true)
-        new_uic:SetInteractive(true)
-        new_uic:SetDockingPoint(4)
-        new_uic:SetDockOffset(0, 0)
+        local trait_data = bmm._data.traits[trait_key]
+        if not trait_data then
+            bmm:log("ERROR TRAIT NOT FOUND ["..trait_key.."]")
+        else
 
-        local text = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/unaligned", dummy_uic)
-        text:SetVisible(true)
-        text:SetDockingPoint(4)
-        text:SetDockOffset(30, 0)
-        text:SetStateText(effect.get_localised_string("effect_bundles_localised_title_"..traits[i]))
+            local trait_holder = core:get_or_create_component(trait_key, "ui/vandy_lib/custom_image_tiled", list_box)
+            trait_holder:SetVisible(true)
+            trait_holder:SetInteractive(true)
+
+            trait_holder:SetState("custom_state_2")
+            trait_holder:SetImagePath("ui/skins/default/parchment_button_square_hover.png", 1)
+            trait_holder:SetCanResizeWidth(true) trait_holder:SetCanResizeHeight(true)
+            trait_holder:Resize(list_box:Width() * 0.9, list_box:Height() * 0.20)
+
+            trait_holder:SetDockingPoint(1)
+            trait_holder:SetDockOffset(0, 0)
+
+            local trait_uic = core:get_or_create_component(trait_key, "ui/vandy_lib/text/text_with_icon", trait_holder)
+            trait_uic:SetVisible(true)
+            trait_uic:SetInteractive(false)
+            trait_uic:SetDockingPoint(4)
+            trait_uic:SetDockOffset(0, 0)
+
+            local eb = trait_data["effect_bundle"]
+            local eb_key = eb.key
+
+            local eb_text = effect.get_localised_string("effect_bundles_localised_title_"..eb_key)
+            local eb_description = effect.get_localised_string("effect_bundles_localised_description_"..eb_key)
+
+            local eb_icon = eb.image_path
+
+            trait_uic:SetStateText(eb_text)
+            trait_uic:SetImagePath(eb_icon)
+            
+            local effects = eb.effects
+
+            local is_hovered = false
+
+            self:add_listener("bm_trait_hover")
+            core:add_listener(
+                "bm_trait_hover",
+                "ComponentMouseOn",
+                function(context)
+                    return context.string == trait_key
+                end,
+                function(context)
+                    is_hovered = true
+
+                    local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/campaign ui/character_background_skill_tooltip")
+                    tooltip:SetVisible(true)
+
+                    local uic_title = find_uicomponent(tooltip, "dy_title")
+                    local uic_desc = find_uicomponent(tooltip, "description_window")
+                    local uic_expl = find_uicomponent(tooltip, "dy_explanation") -- TODO use this???
+
+                    uic_title:SetStateText(eb_text)
+                    uic_desc:SetStateText(eb_description)
+
+                    local effects_list = find_uicomponent(tooltip, "effects_list")
+                    local template_entry = find_uicomponent(effects_list, "template_entry")
+
+                    for j = 1, #effects do
+                        bmm:log("in effect ["..j.."]")
+                        local current_effect = effects[j]
+
+                        local effect_key = current_effect.key
+                        local value = current_effect.value
+                        local image_path = current_effect.image_path
+                        local effect_scope = current_effect.effect_scope
+                        local is_good = current_effect.is_good
+
+                        bmm:log("bloop")
+
+                        local effect_uic = UIComponent(template_entry:CopyComponent(effect_key))
+
+                        local effect_text = effect.get_localised_text("effects_description_"..effect_key) .. " " .. effect.get_localised_text("campaign_effect_scopes_localised_text_"..effect_scope)
+
+                        if is_good then
+                            effect_text = "[[col:dark_g]]" .. effect_text .. "[[/col]]"
+                        else
+                            effect_text = "[[col:dark_r]]" .. effect_text .. "[[/col]]"
+                        end
+
+                        bmm:log("blep")
+
+                        local val_txt = tostring(value)
+                        local plus_val_txt = val_txt
+                        if value > 0 then
+                            plus_val_txt = "+"..val_txt
+                        end
+
+
+                        if string.find(effect_text, "%+n") then
+                            effect_text = string.gsub(effect_text, "%%%+n", plus_val_txt)
+                        else
+                            if string.find(effect_text, "%n") then
+                                effect_text = string.gsub(effect_text, "%%n", val_txt)
+                            end
+                        end
+
+                        bmm:log("blip")
+
+                        effect_uic:SetVisible(true)
+                        effect_uic:SetImagePath(image_path)
+                        effect_uic:SetStateText(effect_text)
+
+                        bmm:log("BLAP")
+                    end
+
+                    bmm:log("Loop survived!")
+                end,
+                true
+            )
+
+            self:add_listener("bm_trait_hover_off")
+            core:add_listener(
+                "bm_trait_hover_off",
+                "ComponentMouseOn",
+                function(context)
+                    return is_hovered and context.string ~= trait_key
+                end,
+                function(context)
+                    is_hovered = false
+
+                    local tooltip = find_uicomponent("bm_trait_tooltip")
+                    self:delete_component(tooltip)
+                end,
+                true
+            )
+
+        end
     end
 
     list_box:Layout()
