@@ -17,7 +17,7 @@ local broodmama_manager = {
 
     broodmothers = {},
 
-    random_traits = {
+    --[[random_traits = {
         "example_1",
         "example_2",
         "example_3",
@@ -32,7 +32,7 @@ local broodmama_manager = {
         "broodmother_neglectful",
         "broodmother_paranoid",
         "broodmother_timid",
-    },
+    },]]
 
 
     -- similar to CQI for TW objects; unique counter to identify broodmothers
@@ -90,11 +90,24 @@ function broodmama_manager:init()
     self._UI_OBJ = self:load_module("ui", self.module_filepath)
     self._BROODMOTHER = self:load_module("broodmother", self.module_filepath)
 
+    -- load up all the "data"
     local data_path = self.module_filepath .. "data/"
+
     self._data = {}
+
     self._data.broodmothers = self:load_module("predefined_broodmothers", data_path)
     self._data.categories = self:load_module("categories", data_path)
     self._data.actions = self:load_module("actions", data_path)
+    self._data.traits = self:load_module("traits", data_path)
+
+    self.random_traits = {}
+
+    -- loop through all the new traits, and add any with the "random" field to the self.random_traits table
+    for trait_key, trait_data in pairs(self._data.traits) do
+        if trait_data.random then
+            self.random_traits[#self.random_traits+1] = trait_key
+        end
+    end
 end
 
 function broodmama_manager:load_module(module_name, path)
