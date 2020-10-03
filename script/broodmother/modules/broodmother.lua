@@ -3,10 +3,10 @@ local bmm = broodmama_manager
 -- this is all the data held by a single "broodmother" object.
 
 local broodmother_obj = {
-    faction_key = "",
-    location = "",
+    --faction_key = "",
+    --location = "",
 
-    traits = {},
+    --traits = {},
 }
 
 function broodmother_obj.new_from_obj(o)
@@ -15,7 +15,14 @@ function broodmother_obj.new_from_obj(o)
     setmetatable(o, {__index = broodmother_obj})
 
     o.index = bmm:get_next_unique_counter()
+
+    -- TODO catch if they're regionless!
     o.location = cm:get_faction(o.faction_key):home_region():name()
+
+    o.resources = {
+        docile = 0,
+        starvation = 0,
+    }
 
     return o
 end
@@ -29,6 +36,11 @@ function broodmother_obj.new(faction_key, region_key, base_image)
     new_broodmother.location = region_key
     new_broodmother.traits = {}
     new_broodmother.name = "Broodmother"
+
+    new_broodmother.resources = {
+        docile = 0,
+        starvation = 0,
+    }
 
     new_broodmother.index = bmm:get_next_unique_counter()
 
@@ -103,6 +115,61 @@ end
 
 function broodmother_obj:get_faction_key()
     return self.faction_key
+end
+
+function broodmother_obj:set_resource_num_with_key(resource_key, num)
+    if not is_string(resource_key) then
+        -- errmsg
+        return false
+    end
+
+    if not self.resources[resource_key] then
+        -- errmsg, invalid key
+        return false
+    end
+
+    if not is_number(num) then
+        -- errmsg
+        return false
+    end
+
+    -- TODO catch if it's too high or too low
+
+    self.resources[resource_key] = num
+end
+
+function broodmother_obj:change_resource_num_by_amount(resource_key, change_amount)
+    if not is_string(resource_key) then
+        -- errmsg
+        return false
+    end
+
+    if not self.resources[resource_key] then
+        -- errmsg, invalid key
+        return false
+    end
+
+    if not is_number(change_amount) then
+        -- errmsg
+        return false
+    end
+
+    -- TODO catch if it's too high or too low
+    self.resources[resource_key] = self.resources[resource_key] + change_amount
+end
+
+function broodmother_obj:get_resource_num_with_key(resource_key)
+    if not is_string(resource_key) then
+        -- errmsg
+        return false
+    end
+
+    if not self.resources[resource_key] then
+        -- invalid key, errmsg
+        return false
+    end
+
+    return self.resources[resource_key]
 end
 
 return broodmother_obj
