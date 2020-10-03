@@ -858,22 +858,42 @@ function ui_obj:create_broodmother_column()
     traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 20)
     traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
     
-    local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda/unaligned", traits_panel)
+    --[[local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda/unaligned", traits_panel)
     text:SetVisible(true)
 
     text:SetDockingPoint(2)
-    text:SetDockOffset(0, 10)
+    text:SetDockOffset(0, 10)]]
 
-    local w,h = text:TextDimensionsForText("Broodmother Traits")
+    --[[populate_context_menu_on_pressocal w,h = text:TextDimensionsForText("Broodmother Traits")
     text:ResizeTextResizingComponentToInitialSize(w,h)
-    text:SetStateText("Broodmother Traits")
+    text:SetStateText("Broodmother Traits")]]
+
+    local title_bg = core:get_or_create_component("title_bg", "ui/vandy_lib/custom_image_tiled", traits_panel)
+    title_bg:SetVisible(true)
+    title_bg:SetState("custom_state_2")
+    title_bg:SetImagePath("ui/skins/default/parchment_divider_title.png", 1)
+    title_bg:SetCanResizeWidth(true) title_bg:SetCanResizeHeight(true)
+    title_bg:Resize(traits_panel:Width() * 0.35, 40)
+
+    title_bg:SetDockingPoint(2)
+    title_bg:SetDockOffset(0, -(title_bg:Height()/4))
+
+    -- TODO la_gioconda_uppercase / ingame_paragraph_heading
+    local title_txt = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/center", title_bg)
+    title_txt:SetDockingPoint(5)
+    title_txt:SetDockOffset(0, 0)
+    title_txt:Resize(title_bg:Width() * 0.9, title_bg:Height() * 0.9)
+
+    title_txt:SetStateText("Traits")
+
+    -- TODO tooltip on the title
 
     local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", traits_panel)
     list_view:SetDockingPoint(2)
-    list_view:SetDockOffset(10, text:Height() + 5)
+    list_view:SetDockOffset(10, title_bg:Height() + 5)
 
     local remaining_width = traits_panel:Width()
-    local remaining_height = traits_panel:Height() - text:Height()
+    local remaining_height = traits_panel:Height() - title_bg:Height()
 
     list_view:SetCanResizeWidth(true) list_view:SetCanResizeHeight(true)
     list_view:Resize(remaining_width -30, remaining_height -30)
@@ -986,7 +1006,9 @@ function ui_obj:create_context_column()
     rites_flavour:SetVisible(true)
 
     rites_flavour:SetCanResizeWidth(true) rites_flavour:SetCanResizeHeight(true)
-    rites_flavour:Resize(rites_holder:Width() * 0.8, rites_title:Height() * 8)
+    local ow, oh = rites_holder:Width() * 0.8, rites_title:Height() * 8
+    rites_flavour:Resize(ow, oh)
+    rites_flavour:SetCanResizeWidth(false) rites_flavour:SetCanResizeHeight(false)
 
     rites_flavour:SetDockingPoint(2)
     rites_flavour:SetDockOffset(0, rites_title:Height() + 25)
@@ -995,6 +1017,9 @@ function ui_obj:create_context_column()
         local w,h = rites_flavour:TextDimensionsForText("Flavour text is located here, sir.")
         rites_flavour:ResizeTextResizingComponentToInitialSize(w, h)
         rites_flavour:SetStateText("Flavour text is located here, sir.")
+
+        rites_flavour:Resize(ow, oh)
+        rites_flavour:ResizeTextResizingComponentToInitialSize(ow, oh)
     end
 
     bmm:log("deets_holder")
@@ -1049,7 +1074,7 @@ function ui_obj:create_context_column()
     local buttons_holder = core:get_or_create_component("buttons_holder", "ui/vandy_lib/script_dummy", rites_holder)
     buttons_holder:SetDockingPoint(8)
     buttons_holder:SetDockOffset(0, 0)
-    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.05)
+    buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.1)
 
     do
         local perform_button = core:get_or_create_component("perform", "ui/templates/square_large_text_button", buttons_holder)
@@ -1171,19 +1196,20 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             bmm:log("ERROR TRAIT NOT FOUND ["..trait_key.."]")
         else
 
-            local trait_holder = core:get_or_create_component(trait_key, "ui/vandy_lib/custom_image_tiled", list_box)
+            local trait_holder = core:get_or_create_component(trait_key, "ui/vandy_lib/custom_image_tiled_something", list_box)
             trait_holder:SetVisible(true)
             trait_holder:SetInteractive(true)
 
             trait_holder:SetState("custom_state_2")
-            trait_holder:SetImagePath("ui/skins/default/parchment_button_square_hover.png", 1)
+            trait_holder:SetImagePath("ui/skins/warhammer2/parchment_button_square_hover.png", 1)
+
             trait_holder:SetCanResizeWidth(true) trait_holder:SetCanResizeHeight(true)
             trait_holder:Resize(list_box:Width() * 0.9, list_box:Height() * 0.20)
 
             trait_holder:SetDockingPoint(1)
             trait_holder:SetDockOffset(0, 0)
 
-            local trait_uic = core:get_or_create_component(trait_key, "ui/vandy_lib/text/text_with_icon", trait_holder)
+            local trait_uic = core:get_or_create_component("trait", "ui/vandy_lib/text/text_with_icon", trait_holder)
             trait_uic:SetVisible(true)
             trait_uic:SetInteractive(false)
             trait_uic:SetDockingPoint(4)
@@ -1197,7 +1223,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
 
             local eb_icon = eb.image_path
 
-            trait_uic:SetStateText(eb_text)
+            trait_uic:SetStateText("[[col:black]]" .. eb_text .. "[[/col]]")
             trait_uic:SetImagePath(eb_icon)
             
             local effects = eb.effects
@@ -1219,13 +1245,18 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
 
                     local uic_title = find_uicomponent(tooltip, "dy_title")
                     local uic_desc = find_uicomponent(tooltip, "description_window")
-                    local uic_expl = find_uicomponent(tooltip, "dy_explanation") -- TODO use this???
+                    local uic_expl = find_uicomponent(tooltip, "dy_explanation") -- TODO use this??? set visible + set text is all
 
                     uic_title:SetStateText(eb_text)
                     uic_desc:SetStateText(eb_description)
 
                     local effects_list = find_uicomponent(tooltip, "effects_list")
                     local template_entry = find_uicomponent(effects_list, "template_entry")
+
+                    if not is_uicomponent(template_entry) then
+                        bmm:log("template not founded!")
+                        print_all_uicomponent_children(tooltip)
+                    end
 
                     for j = 1, #effects do
                         bmm:log("in effect ["..j.."]")
@@ -1237,16 +1268,27 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
                         local effect_scope = current_effect.effect_scope
                         local is_good = current_effect.is_good
 
+                        bmm:log("effect key is: "..tostring(effect_key))
+
                         bmm:log("bloop")
+
+                        if not is_uicomponent(template_entry) then
+                            bmm:log("template not founded! 2")
+                        end
 
                         local effect_uic = UIComponent(template_entry:CopyComponent(effect_key))
 
-                        local effect_text = effect.get_localised_text("effects_description_"..effect_key) .. " " .. effect.get_localised_text("campaign_effect_scopes_localised_text_"..effect_scope)
+                        bmm:log("bloop? :(")
+
+                        if not is_uicomponent(effect_uic) then
+                            bmm:log("Copy failed!")
+                        end
+                        local effect_text = effect.get_localised_string("effects_description_"..effect_key) .. " " .. effect.get_localised_string("campaign_effect_scopes_localised_text_"..effect_scope)
 
                         if is_good then
-                            effect_text = "[[col:dark_g]]" .. effect_text .. "[[/col]]"
+                            effect_text = "[[col:green]]" .. effect_text .. "[[/col]]"
                         else
-                            effect_text = "[[col:dark_r]]" .. effect_text .. "[[/col]]"
+                            effect_text = "[[col:red]]" .. effect_text .. "[[/col]]"
                         end
 
                         bmm:log("blep")
@@ -1266,6 +1308,14 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
                             end
                         end
 
+                        if not is_string(effect_text) then
+                            effect_text = ""
+                        end
+
+                        if not is_string(image_path) then
+                            image_path = "ui/campaign ui/effect_bundles/magic.png"
+                        end
+
                         bmm:log("blip")
 
                         effect_uic:SetVisible(true)
@@ -1274,6 +1324,8 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
 
                         bmm:log("BLAP")
                     end
+
+                    effects_list:Layout()
 
                     bmm:log("Loop survived!")
                 end,
