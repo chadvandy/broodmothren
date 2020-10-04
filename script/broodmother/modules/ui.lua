@@ -424,21 +424,32 @@ function ui_obj:create_actions_column()
         category_title:SetDockOffset(0, 0)
 
         -- create the image for the category
-        local category_uic = core:get_or_create_component(category_key..
-        "_img", "ui/templates/custom_image", category_holder)
+        local category_uic = core:get_or_create_component(category_key.."_img", "ui/templates/custom_image", category_holder)
         category_uic:SetState("custom_state_1")
         category_uic:SetImagePath(category_image_path)
         category_uic:SetVisible(true)
+
+        -- create a border bg behind the category image
+        local border_uic = core:get_or_create_component("border", "ui/vandy_lib/custom_image_tiled", category_uic)
+        border_uic:SetState("custom_state_2")
+        border_uic:SetVisible(true)
+        border_uic:SetImagePath("ui/skins/warhammer2/panel_back_border.png", 1)
 
         local new_w = category_holder:Width() * 0.90
         local new_h = new_w / 3
 
         category_uic:SetCanResizeWidth(true) category_uic:SetCanResizeHeight(true)
+        border_uic:SetCanResizeWidth(true) border_uic:SetCanResizeHeight(true)
         category_uic:Resize(new_w, new_h)
+        border_uic:Resize(new_w*1.05, new_h*1.05)
         category_uic:SetCanResizeWidth(false) category_uic:SetCanResizeHeight(false)
+        border_uic:SetCanResizeWidth(false) border_uic:SetCanResizeHeight(false)
 
         category_uic:SetDockingPoint(2)
         category_uic:SetDockOffset(0, 5 + category_title:Height())
+
+        border_uic:SetDockingPoint(5)
+        border_uic:SetDockOffset(0, 0)
 
         local actions_prototype = bmm:get_action_prototype()
         local actions_template = actions_prototype.template_path
@@ -848,6 +859,45 @@ function ui_obj:create_broodmother_column()
     div:SetDockingPoint(8)
     div:SetDockOffset(0, 15)
 
+    local resources_holder = core:get_or_create_component("resources_holder", "ui/vandy_lib/script_dummy", broodmother_details)
+    resources_holder:SetVisible(true)
+    resources_holder:SetDockingPoint(2)
+    resources_holder:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 10)
+
+    resources_holder:Resize(broodmother_details:Width() * 0.9, broodmother_details:Height() * 0.1)
+
+    do
+        local starvation_holder = core:get_or_create_component("starvation", "ui/vandy_lib/script_dummy", resources_holder)
+        starvation_holder:Resize(resources_holder:Width() * 0.4, resources_holder:Height())
+        starvation_holder:SetDockingPoint(4)
+        starvation_holder:SetDockOffset(resources_holder:Width() * 0.18, 0)
+
+        local starvation = core:get_or_create_component("icon", "ui/templates/custom_image", starvation_holder)
+        starvation:SetVisible(true)
+        starvation:SetState("custom_state_1")
+        starvation:SetImagePath("ui/skins/default/advisor_beastmen_2d.png")
+
+        starvation:SetCanResizeWidth(true) starvation:SetCanResizeHeight(true)
+        starvation:Resize(starvation_holder:Height() * 0.8, starvation_holder:Height() * 0.8)
+
+        local submission_holder = core:get_or_create_component("submission", "ui/vandy_lib/script_dummy", resources_holder)
+        submission_holder:Resize(resources_holder:Width() * 0.4, resources_holder:Height())
+        submission_holder:SetDockingPoint(6)
+        submission_holder:SetDockOffset(-(resources_holder:Width() * 0.18), 0)
+
+        local submission = core:get_or_create_component("icon", "ui/templates/custom_image", submission_holder)
+        submission:SetVisible(true)
+        submission:SetState("custom_state_1")
+        submission:SetImagePath("ui/skins/default/advisor_beastmen_2d.png")
+
+        submission:SetCanResizeWidth(true) submission:SetCanResizeHeight(true)
+        submission:Resize(submission_holder:Height() * 0.8, submission_holder:Height() * 0.8)
+
+        
+    bmm:log("test 9")
+    end
+
+
     -- TODO add in a proper title a la the character details sheet    
     local traits_panel = core:get_or_create_component("traits_panel", "ui/vandy_lib/custom_image_tiled", broodmother_details)
     traits_panel:SetVisible(true)
@@ -855,36 +905,28 @@ function ui_obj:create_broodmother_column()
     traits_panel:SetImagePath("ui/skins/default/parchment_divider.png", 1)
 
     traits_panel:SetDockingPoint(2)
-    traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + 20)
-    traits_panel:Resize(broodmother_details:Width(), broodmother_details:Height() * 0.4)
-    
-    --[[local text = core:get_or_create_component("dummy_text", "ui/vandy_lib/text/la_gioconda/unaligned", traits_panel)
-    text:SetVisible(true)
+    traits_panel:SetDockOffset(0, broodmother_title:Height() + broodmother_location:Height() + div:Height() + resources_holder:Height() + 20)
+    traits_panel:Resize(broodmother_details:Width() * 0.9, broodmother_details:Height() * 0.4)
 
-    text:SetDockingPoint(2)
-    text:SetDockOffset(0, 10)]]
-
-    --[[populate_context_menu_on_pressocal w,h = text:TextDimensionsForText("Broodmother Traits")
-    text:ResizeTextResizingComponentToInitialSize(w,h)
-    text:SetStateText("Broodmother Traits")]]
-
-    local title_bg = core:get_or_create_component("title_bg", "ui/vandy_lib/custom_image_tiled", traits_panel)
+    local title_bg = core:get_or_create_component("title_bg", "ui/vandy_lib/text/title_with_text", traits_panel)
     title_bg:SetVisible(true)
     title_bg:SetState("custom_state_2")
-    title_bg:SetImagePath("ui/skins/default/parchment_divider_title.png", 1)
+    title_bg:SetImagePath("ui/skins/default/parchment_divider_title.png")
     title_bg:SetCanResizeWidth(true) title_bg:SetCanResizeHeight(true)
     title_bg:Resize(traits_panel:Width() * 0.35, 40)
 
     title_bg:SetDockingPoint(2)
     title_bg:SetDockOffset(0, -(title_bg:Height()/4))
 
+    title_bg:SetStateText("Traits")
+
     -- TODO la_gioconda_uppercase / ingame_paragraph_heading
-    local title_txt = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/center", title_bg)
+    --[[local title_txt = core:get_or_create_component("text", "ui/vandy_lib/text/la_gioconda/center", title_bg)
     title_txt:SetDockingPoint(5)
     title_txt:SetDockOffset(0, 0)
     title_txt:Resize(title_bg:Width() * 0.9, title_bg:Height() * 0.9)
 
-    title_txt:SetStateText("Traits")
+    title_txt:SetStateText("Traits")]]
 
     -- TODO tooltip on the title
 
@@ -906,7 +948,7 @@ function ui_obj:create_broodmother_column()
 
     local list_box = find_uicomponent(list_clip, "list_box")
     list_box:SetCanResizeWidth(true) list_box:SetCanResizeHeight(true)
-    list_box:SetDockingPoint(1)
+    list_box:SetDockingPoint(2)
     list_box:SetDockOffset(0, 0)
     list_box:Resize(remaining_width, remaining_height)
 
@@ -917,12 +959,12 @@ function ui_obj:create_broodmother_column()
     local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", broodmother_details)
     effects_holder:SetVisible(true)
     effects_holder:SetCanResizeWidth(true) effects_holder:SetCanResizeHeight(true)
-    effects_holder:Resize(broodmother_details:Width() * 0.95, broodmother_details:Height() * 0.4)
+    effects_holder:Resize(broodmother_details:Width() * 0.9, broodmother_details:Height() * 0.3)
     effects_holder:SetCanResizeWidth(false) effects_holder:SetCanResizeHeight(false)
 
     effects_holder:SetState("custom_state_2")
     effects_holder:SetDockingPoint(8)
-    effects_holder:SetDockOffset(0, -10)
+    effects_holder:SetDockOffset(0, -20)
 
     effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
 
@@ -1206,7 +1248,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             trait_holder:SetCanResizeWidth(true) trait_holder:SetCanResizeHeight(true)
             trait_holder:Resize(list_box:Width() * 0.9, list_box:Height() * 0.20)
 
-            trait_holder:SetDockingPoint(1)
+            trait_holder:SetDockingPoint(2)
             trait_holder:SetDockOffset(0, 0)
 
             local trait_uic = core:get_or_create_component("trait", "ui/vandy_lib/text/text_with_icon", trait_holder)
