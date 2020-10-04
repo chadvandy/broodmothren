@@ -13,6 +13,8 @@ local ui_obj = {
     selected_slot = 0,
 
     selected_action = "",
+
+    hovered_trait = "",
 }
 
 function ui_obj:delete_component(uic)
@@ -64,13 +66,46 @@ function ui_obj:clear_listeners()
     self.listener_names = {}
 end
 
-function ui_obj:add_listener(listener_name)
+function ui_obj:add_listener(listener_name, event_name, conditional, callback, is_persistent)
     if not is_string(listener_name) then
-        -- errmsg
+        bmm:log("listener name not a string")
         return false
     end
 
-    self.listener_names[#self.listener_names+1] = listener_name
+    if not is_string(event_name) then
+        bmm:log("event name not a string")
+        return false
+    end
+
+    if not is_function(conditional) or not conditional == true then
+        bmm:log("conditional not a function or true")
+        return false
+    end
+
+    if not is_function(callback) then
+        bmm:log("callback not a func")
+        return false
+    end
+
+    if not is_boolean(is_persistent) then
+        bmm:log("is_persistent not a booleoole")
+        return false
+    end
+
+    -- remove it before it's added elsewhere
+    core:remove_listener(listener_name)
+
+    -- save it in storage so it's deleted when the panel closes
+    self.listener_names[#self.listener_names+1] = listener_name -- TODO this will bloat pretty quickly, do k/v and do self.listener_names[listener_name] = true?
+
+    -- set up the actual listener in core
+    core:add_listener(
+        listener_name,
+        event_name,
+        conditional,
+        callback,
+        is_persistent
+    )
 end
 
 function ui_obj:open_frame()
@@ -88,6 +123,8 @@ function ui_obj:close_frame()
     local panel = find_uicomponent(self.panel_name)
 
     self:delete_component(panel)
+
+    self.hovered_trait = ""
 
     self:clear_listeners()
 end
@@ -441,7 +478,7 @@ function ui_obj:create_actions_column()
         category_uic:SetCanResizeWidth(true) category_uic:SetCanResizeHeight(true)
         border_uic:SetCanResizeWidth(true) border_uic:SetCanResizeHeight(true)
         category_uic:Resize(new_w, new_h)
-        border_uic:Resize(new_w*1.05, new_h*1.05)
+        border_uic:Resize(new_w+10, new_h+10)
         category_uic:SetCanResizeWidth(false) category_uic:SetCanResizeHeight(false)
         border_uic:SetCanResizeWidth(false) border_uic:SetCanResizeHeight(false)
 
@@ -486,7 +523,7 @@ function ui_obj:create_actions_column()
             [4] = 9,
         }
 
-        core:add_listener(
+        self:add_listener(
             "action_pressed",
             "ComponentLClickUp",
             function(context)
@@ -773,15 +810,15 @@ function ui_obj:create_broodmother_column()
                 active = true
             end]]
 
-            self:add_listener("select_broodmother")
-            core:add_listener(
-                "select_broodmother",
+            self:add_listener(
+                "select_broodmother_"..broodmother_key,
                 "ComponentLClickUp",
                 function(context)
                     return context.string == broodmother_key
                 end,
                 function(context)
-                    self:populate_panel_on_broodmother_selected(i)
+                    local ok, err = pcall(function()
+                    self:populate_panel_on_broodmother_selected(i) end) if not ok then bmm:log(err) end
                 end,
                 true
             )
@@ -880,6 +917,8 @@ function ui_obj:create_broodmother_column()
         starvation:SetCanResizeWidth(true) starvation:SetCanResizeHeight(true)
         starvation:Resize(starvation_holder:Height() * 0.8, starvation_holder:Height() * 0.8)
 
+        starvation:SetDockingPoint(5)
+
         local submission_holder = core:get_or_create_component("submission", "ui/vandy_lib/script_dummy", resources_holder)
         submission_holder:Resize(resources_holder:Width() * 0.4, resources_holder:Height())
         submission_holder:SetDockingPoint(6)
@@ -892,6 +931,8 @@ function ui_obj:create_broodmother_column()
 
         submission:SetCanResizeWidth(true) submission:SetCanResizeHeight(true)
         submission:Resize(submission_holder:Height() * 0.8, submission_holder:Height() * 0.8)
+
+        submission:SetDockingPoint(5)
 
         
     bmm:log("test 9")
@@ -959,7 +1000,7 @@ function ui_obj:create_broodmother_column()
     local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", broodmother_details)
     effects_holder:SetVisible(true)
     effects_holder:SetCanResizeWidth(true) effects_holder:SetCanResizeHeight(true)
-    effects_holder:Resize(broodmother_details:Width() * 0.9, broodmother_details:Height() * 0.3)
+    effects_holder:Resize(broodmother_details:Width() * 0.9, broodmother_details:Height() * 0.25)
     effects_holder:SetCanResizeWidth(false) effects_holder:SetCanResizeHeight(false)
 
     effects_holder:SetState("custom_state_2")
@@ -967,6 +1008,8 @@ function ui_obj:create_broodmother_column()
     effects_holder:SetDockOffset(0, -20)
 
     effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
+
+    
 
     --[[local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
     div:SetVisible(true)
@@ -1237,8 +1280,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
         if not trait_data then
             bmm:log("ERROR TRAIT NOT FOUND ["..trait_key.."]")
         else
-
-            local trait_holder = core:get_or_create_component(trait_key, "ui/vandy_lib/custom_image_tiled_something", list_box)
+            local trait_holder = core:get_or_create_component("bm_trait_holder_"..i, "ui/vandy_lib/custom_image_tiled_something", list_box)
             trait_holder:SetVisible(true)
             trait_holder:SetInteractive(true)
 
@@ -1251,7 +1293,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             trait_holder:SetDockingPoint(2)
             trait_holder:SetDockOffset(0, 0)
 
-            local trait_uic = core:get_or_create_component("trait", "ui/vandy_lib/text/text_with_icon", trait_holder)
+            local trait_uic = core:get_or_create_component(trait_key, "ui/vandy_lib/text/text_with_icon", trait_holder)
             trait_uic:SetVisible(true)
             trait_uic:SetInteractive(false)
             trait_uic:SetDockingPoint(4)
@@ -1261,139 +1303,157 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             local eb_key = eb.key
 
             local eb_text = effect.get_localised_string("effect_bundles_localised_title_"..eb_key)
-            local eb_description = effect.get_localised_string("effect_bundles_localised_description_"..eb_key)
+            --local eb_description = effect.get_localised_string("effect_bundles_localised_description_"..eb_key)
 
             local eb_icon = eb.image_path
 
             trait_uic:SetStateText("[[col:black]]" .. eb_text .. "[[/col]]")
             trait_uic:SetImagePath(eb_icon)
             
-            local effects = eb.effects
-
-            local is_hovered = false
-
-            self:add_listener("bm_trait_hover")
-            core:add_listener(
-                "bm_trait_hover",
-                "ComponentMouseOn",
-                function(context)
-                    return context.string == trait_key
-                end,
-                function(context)
-                    is_hovered = true
-
-                    local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/campaign ui/character_background_skill_tooltip")
-                    tooltip:SetVisible(true)
-
-                    local uic_title = find_uicomponent(tooltip, "dy_title")
-                    local uic_desc = find_uicomponent(tooltip, "description_window")
-                    local uic_expl = find_uicomponent(tooltip, "dy_explanation") -- TODO use this??? set visible + set text is all
-
-                    uic_title:SetStateText(eb_text)
-                    uic_desc:SetStateText(eb_description)
-
-                    local effects_list = find_uicomponent(tooltip, "effects_list")
-                    local template_entry = find_uicomponent(effects_list, "template_entry")
-
-                    if not is_uicomponent(template_entry) then
-                        bmm:log("template not founded!")
-                        print_all_uicomponent_children(tooltip)
-                    end
-
-                    for j = 1, #effects do
-                        bmm:log("in effect ["..j.."]")
-                        local current_effect = effects[j]
-
-                        local effect_key = current_effect.key
-                        local value = current_effect.value
-                        local image_path = current_effect.image_path
-                        local effect_scope = current_effect.effect_scope
-                        local is_good = current_effect.is_good
-
-                        bmm:log("effect key is: "..tostring(effect_key))
-
-                        bmm:log("bloop")
-
-                        if not is_uicomponent(template_entry) then
-                            bmm:log("template not founded! 2")
-                        end
-
-                        local effect_uic = UIComponent(template_entry:CopyComponent(effect_key))
-
-                        bmm:log("bloop? :(")
-
-                        if not is_uicomponent(effect_uic) then
-                            bmm:log("Copy failed!")
-                        end
-                        local effect_text = effect.get_localised_string("effects_description_"..effect_key) .. " " .. effect.get_localised_string("campaign_effect_scopes_localised_text_"..effect_scope)
-
-                        if is_good then
-                            effect_text = "[[col:green]]" .. effect_text .. "[[/col]]"
-                        else
-                            effect_text = "[[col:red]]" .. effect_text .. "[[/col]]"
-                        end
-
-                        bmm:log("blep")
-
-                        local val_txt = tostring(value)
-                        local plus_val_txt = val_txt
-                        if value > 0 then
-                            plus_val_txt = "+"..val_txt
-                        end
-
-
-                        if string.find(effect_text, "%+n") then
-                            effect_text = string.gsub(effect_text, "%%%+n", plus_val_txt)
-                        else
-                            if string.find(effect_text, "%n") then
-                                effect_text = string.gsub(effect_text, "%%n", val_txt)
-                            end
-                        end
-
-                        if not is_string(effect_text) then
-                            effect_text = ""
-                        end
-
-                        if not is_string(image_path) then
-                            image_path = "ui/campaign ui/effect_bundles/magic.png"
-                        end
-
-                        bmm:log("blip")
-
-                        effect_uic:SetVisible(true)
-                        effect_uic:SetImagePath(image_path)
-                        effect_uic:SetStateText(effect_text)
-
-                        bmm:log("BLAP")
-                    end
-
-                    effects_list:Layout()
-
-                    bmm:log("Loop survived!")
-                end,
-                true
-            )
-
-            self:add_listener("bm_trait_hover_off")
-            core:add_listener(
-                "bm_trait_hover_off",
-                "ComponentMouseOn",
-                function(context)
-                    return is_hovered and context.string ~= trait_key
-                end,
-                function(context)
-                    is_hovered = false
-
-                    local tooltip = find_uicomponent("bm_trait_tooltip")
-                    self:delete_component(tooltip)
-                end,
-                true
-            )
-
+            --local effects = eb.effects
         end
     end
 
     list_box:Layout()
+
+    self:add_listener(
+        "bm_trait_hover",
+        "ComponentMouseOn",
+        function(context)
+            return string.find(context.string, "bm_trait_holder") --and self.hovered_trait ~= "bm_trait_holder"
+        end,
+        function(context)
+            local hovered_uic = UIComponent(context.component) -- the "bm_trait_holder" component, which is the image background that the tooltip should be on
+            local trait_uic = UIComponent(hovered_uic:Find(0)) -- grab the text/icon child of the trait_holder, which has the key of the trait as its Id
+            local trait_key = trait_uic:Id()
+
+            local trait_data = bmm._data.traits[trait_key]
+
+            local eb = trait_data.effect_bundle
+            local eb_key = eb.key
+
+            local eb_text = effect.get_localised_string("effect_bundles_localised_title_"..eb_key)
+            local eb_description = effect.get_localised_string("effect_bundles_localised_description_"..eb_key)
+
+            --local eb_icon = eb.image_path
+
+            local effects = eb.effects
+
+            self.hovered_trait = trait_key
+
+            -- first, kill any existing tooltip!
+            self:delete_component(find_uicomponent("bm_trait_tooltip"))
+
+            -- create the new one
+            local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/campaign ui/character_background_skill_tooltip")
+            tooltip:SetVisible(true)
+
+            local uic_title = find_uicomponent(tooltip, "dy_title")
+            local uic_desc = find_uicomponent(tooltip, "description_window")
+            local uic_expl = find_uicomponent(tooltip, "dy_explanation") -- TODO use this??? set visible + set text is all
+
+            uic_title:SetStateText(eb_text)
+            uic_desc:SetStateText(eb_description)
+
+            local effects_list = find_uicomponent(tooltip, "effects_list")
+            local template_entry = find_uicomponent(effects_list, "template_entry")
+
+            if not is_uicomponent(template_entry) then
+                bmm:log("template not founded!")
+                print_all_uicomponent_children(tooltip)
+            end
+
+            for j = 1, #effects do
+                bmm:log("in effect ["..j.."]")
+                local current_effect = effects[j]
+
+                local effect_key = current_effect.key
+                local value = current_effect.value
+                local image_path = current_effect.image_path
+                local effect_scope = current_effect.effect_scope
+                local is_good = current_effect.is_good
+
+                bmm:log("effect key is: "..tostring(effect_key))
+
+                bmm:log("bloop")
+
+                if not is_uicomponent(template_entry) then
+                    bmm:log("template not founded! 2")
+                end
+
+                local effect_uic = UIComponent(template_entry:CopyComponent(effect_key))
+
+                bmm:log("bloop? :(")
+
+                if not is_uicomponent(effect_uic) then
+                    bmm:log("Copy failed!")
+                end
+                local effect_text = effect.get_localised_string("effects_description_"..effect_key) .. " " .. effect.get_localised_string("campaign_effect_scopes_localised_text_"..effect_scope)
+
+                if is_good then
+                    effect_text = "[[col:green]]" .. effect_text .. "[[/col]]"
+                else
+                    effect_text = "[[col:red]]" .. effect_text .. "[[/col]]"
+                end
+
+                bmm:log("blep")
+
+                local val_txt = tostring(value)
+                local plus_val_txt = val_txt
+                if value > 0 then
+                    plus_val_txt = "+"..val_txt
+                end
+
+
+                if string.find(effect_text, "%+n") then
+                    effect_text = string.gsub(effect_text, "%%%+n", plus_val_txt)
+                else
+                    if string.find(effect_text, "%n") then
+                        effect_text = string.gsub(effect_text, "%%n", val_txt)
+                    end
+                end
+
+                if not is_string(effect_text) then
+                    effect_text = ""
+                end
+
+                if not is_string(image_path) then
+                    image_path = "ui/campaign ui/effect_bundles/magic.png"
+                end
+
+                bmm:log("blip")
+
+                effect_uic:SetVisible(true)
+                effect_uic:SetImagePath(image_path)
+                effect_uic:SetStateText(effect_text)
+
+                bmm:log("BLAP")
+            end
+
+            effects_list:Layout()
+
+            bmm:log("Loop survived!")
+        end,
+        true
+    )
+
+    self:add_listener(
+        "bm_trait_hover_off",
+        "ComponentMouseOn",
+        function(context)
+            return self.hovered_trait ~= "" and not string.find(context.string, "bm_trait_holder")
+        
+            -- unneeded (I think) because we're tracking bm_trait_holder to another above
+            --and not is_uicomponent(UIComponent(context.component), "trait") -- make sure we're not hovering over another trait, this should only be called from a trait to a non-trait. bm_trait_hover should work for the 
+        end,
+        function(context)
+            self.hovered_trait = ""
+
+            local tooltip = find_uicomponent("bm_trait_tooltip")
+            self:delete_component(tooltip)
+        end,
+        true
+    )
 end
 
 function ui_obj:create_panel()
@@ -1430,8 +1490,7 @@ function ui_obj:create_panel()
     close_button_uic:SetDockOffset(0, -5)
 
     -- close button functionality
-    self:add_listener("close_broodmama")
-    core:add_listener(
+    self:add_listener(
         "close_broodmama",
         "ComponentLClickUp",
         function(context)
