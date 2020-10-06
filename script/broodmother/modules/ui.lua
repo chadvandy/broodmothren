@@ -202,16 +202,16 @@ function ui_obj:populate_context_menu_on_press(action_key)
     local food_holder = find_uicomponent(deets_holder, "food_holder")
     local cooldown_holder = find_uicomponent(deets_holder, "cooldown_holder")
     local duration_holder = find_uicomponent(deets_holder, "duration_holder")
-
     
     -- run through the effects list, and apply everything there
     local effects_holder = find_uicomponent(rites_holder, "effects_holder")
+    local list_box = find_uicomponent(effects_holder, "list_view", "list_clip", "list_box")
     
     -- kill any extant effects
-    effects_holder:DestroyChildren()
+    list_box:DestroyChildren()
 
-    local ypos = 10 -- ydock offset for effects
-    local xpos = 5 -- ditto, x
+    --local ypos = 10 -- ydock offset for effects
+    --local xpos = 5 -- ditto, x
 
     local effect_bundle = action.effect_bundle
     if not effect_bundle then
@@ -266,10 +266,10 @@ function ui_obj:populate_context_menu_on_press(action_key)
                 end
             end
 
-            local effect_uic = UIComponent(effects_holder:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
-            effect_uic:Resize(effects_holder:Width() * 0.98, effect_uic:Height())
+            local effect_uic = UIComponent(list_box:CreateComponent(effect_key, "ui/vandy_lib/script_dummy"))
+            effect_uic:Resize(list_box:Width() * 0.98, effect_uic:Height())
             effect_uic:SetDockingPoint(1)
-            effect_uic:SetDockOffset(xpos, ypos)
+            effect_uic:SetDockOffset(0, 10)
 
             do -- make the icon UIC
                 local uic = UIComponent(effect_uic:CreateComponent("icon", "ui/templates/custom_image"))
@@ -305,12 +305,14 @@ function ui_obj:populate_context_menu_on_press(action_key)
                 hee = oh*1.01
             end
 
-            effect_uic:Resize(effects_holder:Width() * 0.98, hee)
+            effect_uic:Resize(list_box:Width() * 0.98, hee)
 
             local _,h = effect_uic:Bounds()
 
-            ypos = ypos + h + 10
+            --ypos = ypos + h + 10
         end
+
+        list_box:Layout()
 
 
         --[[ this way does not work :)
@@ -1009,7 +1011,7 @@ function ui_obj:create_broodmother_column()
 
     effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
 
-    
+    -- create the list view for the effects holder :)
 
     --[[local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
     div:SetVisible(true)
@@ -1181,6 +1183,33 @@ function ui_obj:create_context_column()
     local remaining_height = dummy:Height() - deets_holder:Height() - rites_flavour:Height() - rites_title:Height() - buttons_holder:Height() - 30 
     effects_holder:Resize(dummy:Width() * 0.9, remaining_height)
     effects_holder:SetDockOffset(0, deets_holder:Height() + rites_flavour:Height() + rites_title:Height() + 15)
+
+    -- create the vertical list for the effects here
+    local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", effects_holder)
+    list_view:SetDockingPoint(2)
+    list_view:SetDockOffset(10, 5)
+
+    local remaining_width = effects_holder:Width()
+    local remaining_height = effects_holder:Height() - 5
+
+    list_view:SetCanResizeWidth(true) list_view:SetCanResizeHeight(true)
+    list_view:Resize(remaining_width -30, remaining_height -30)
+
+    local list_clip = find_uicomponent(list_view, "list_clip")
+    list_clip:SetCanResizeWidth(true) list_clip:SetCanResizeHeight(true)
+    list_clip:SetDockingPoint(0)
+    list_clip:SetDockOffset(0, 0)
+    list_clip:Resize(remaining_width, remaining_height)
+
+    local list_box = find_uicomponent(list_clip, "list_box")
+    list_box:SetCanResizeWidth(true) list_box:SetCanResizeHeight(true)
+    list_box:SetDockingPoint(2)
+    list_box:SetDockOffset(0, 0)
+    list_box:Resize(remaining_width, remaining_height)
+
+    local l_handle = find_uicomponent(list_view, "vslider")
+    l_handle:SetDockingPoint(6)
+    l_handle:SetDockOffset(-20, 0)
     
     --[[local text = core:get_or_create_component("test", "ui/vandy_lib/text/la_gioconda/unaligned", effects_holder)
     text:SetDockingPoint(1)
