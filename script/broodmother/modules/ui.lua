@@ -1345,7 +1345,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             self:delete_component(find_uicomponent("bm_trait_tooltip"))
 
             -- create the new one
-            local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/campaign ui/character_background_skill_tooltip")
+            local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/broodmother/templates/character_background_skill_tooltip")
             tooltip:SetVisible(true)
 
             local uic_title = find_uicomponent(tooltip, "dy_title")
