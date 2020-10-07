@@ -12,7 +12,7 @@ local ui_obj = {
 
     selected_slot = 0,
 
-    selected_action = "",
+    selected_action = nil,
 
     hovered_trait = "",
 }
@@ -126,7 +126,7 @@ function ui_obj:set_selected_action(uic)
         self.selected_action = key
         self.selected_action_uic = uic
     else
-        self.selected_action = ""
+        self.selected_action = nil
         self.selected_action_uic = nil
     end
 end
@@ -134,6 +134,16 @@ end
 function ui_obj:get_selected_action()
     
     return self.selected_action
+end
+
+function ui_obj:perform_selected_action()
+    local selected_action_key = self:get_selected_action()
+    local slot = self.selected_slot
+    local bm_key = self.slots[slot]
+
+    local bm_obj = bmm:get_broodmother_with_key(bm_key)
+
+    bm_obj:perform_effect(selected_action_key)
 end
 
 function ui_obj:open_frame()
@@ -153,7 +163,8 @@ function ui_obj:close_frame()
     self:delete_component(panel)
 
     self.hovered_trait = ""
-    self.selected_action = ""
+    self.selected_action = nil
+    self.selected_action_uic = nil
 
     self:clear_listeners()
 end
@@ -244,6 +255,20 @@ function ui_obj:populate_context_menu_on_press(action_key)
 
         cooldown_holder:SetStateText(tostring(cooldown))
         duration_holder:SetStateText(tostring(duration))
+    end
+
+    -- active/inactive the Perform button
+    do
+        local button_holder = find_uicomponent(rites_holder, "buttons_holder")
+        local perform_button = find_uicomponent(button_holder, "perform_button")
+
+        if self:get_selected_action() then
+            -- TODO if we can perform this action
+                perform_button:SetState("active")
+            -- TODO end
+        else
+            perform_button:SetState("inactive")
+        end
     end
     
     -- run through the effects list, and apply everything there
@@ -512,6 +537,7 @@ function ui_obj:create_actions_column()
         category_uic:SetState("custom_state_1")
         category_uic:SetImagePath(category_image_path)
         category_uic:SetVisible(true)
+        category_uic:SetInteractive(true)
         category_uic:SetTooltipText(category_tt_string, true)
 
         -- create a border bg behind the category image
@@ -577,7 +603,7 @@ function ui_obj:create_actions_column()
             "ComponentMouseOn",
             function(context)
                 local uic = UIComponent(context.component)
-                return uicomponent_descended_from(uic, "action_holder") and self.selected_action == ""
+                return uicomponent_descended_from(uic, "action_holder") and not self.selected_action
             end,
             function(context)
                 local key = context.string
@@ -1246,14 +1272,27 @@ function ui_obj:create_context_column()
     buttons_holder:Resize(dummy:Width() * 0.9, dummy:Height() * 0.1)
 
     do
-        local perform_button = core:get_or_create_component("perform", "ui/templates/square_large_text_button", buttons_holder)
+        local perform_button = core:get_or_create_component("perform_button", "ui/templates/square_large_text_button", buttons_holder)
         perform_button:SetDockingPoint(5)
         perform_button:SetDockOffset(0, 0)
 
-        perform_button:SetState("active")
+        perform_button:SetState("inactive")
 
         local txt = UIComponent(perform_button:Find("button_txt"))
         txt:SetStateText("Perform")
+
+        self:add_listener(
+            "bmm_action_performed",
+            "ComponentLClickUp",
+            function(context)
+                return perform_button == UIComponent(context.component)
+            end,
+            function(context)
+                -- perform the selected action
+                self:perform_selected_action()
+            end,
+            true
+        )
     end
 
     local effects_holder = core:get_or_create_component("effects_holder", "ui/vandy_lib/custom_image_tiled", rites_holder)
@@ -1269,7 +1308,7 @@ function ui_obj:create_context_column()
     -- create the vertical list for the effects here
     local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/vlist", effects_holder)
     list_view:SetDockingPoint(2)
-    list_view:SetDockOffset(10, 5)
+    list_view:SetDockOffset(0, 5)
 
     local remaining_width = effects_holder:Width()
     local remaining_height = effects_holder:Height() - 5
@@ -1456,7 +1495,7 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
             self:delete_component(find_uicomponent("bm_trait_tooltip"))
 
             -- create the new one
-            local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/broodmother/templates/character_background_skill_tooltip")
+            local tooltip = core:get_or_create_component("bm_trait_tooltip", "ui/campaign ui/character_background_skill_tooltip")
             tooltip:SetVisible(true)
 
             local uic_title = find_uicomponent(tooltip, "dy_title")

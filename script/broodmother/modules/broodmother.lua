@@ -24,6 +24,8 @@ function broodmother_obj.new_from_obj(o)
         starvation = 0,
     }
 
+    o.active_effect = ""
+
     return o
 end
 
@@ -36,6 +38,7 @@ function broodmother_obj.new(faction_key, region_key, base_image)
     new_broodmother.location = region_key
     new_broodmother.traits = {}
     new_broodmother.name = "Broodmother"
+    new_broodmother.active_effect = ""
 
     new_broodmother.resources = {
         docile = 0,
@@ -51,6 +54,80 @@ function broodmother_obj.new(faction_key, region_key, base_image)
     end
 
     return new_broodmother
+end
+
+function broodmother_obj:get_active_effect()
+    return self.active_effect
+end
+
+function broodmother_obj:set_active_effect(key)
+    if not is_string(key) then
+        -- errmsg
+        return false
+    end
+
+    self.active_effect = key
+end
+
+function broodmother_obj:perform_effect(selected_action_key)
+    if not selected_action_key then
+        -- errmsg!
+        return false
+    end
+
+    local action_data = bmm._data.actions[selected_action_key]
+    if not action_data then
+        -- errmsg?
+        return false
+    end
+
+    local eb = action_data.effect_bundle
+
+    if not is_table(eb) then
+        -- errmsg
+        return false
+    end
+
+    self:set_active_effect(selected_action_key)
+
+    local eb_key = eb.key
+    local duration = action_data.duration
+
+    local effects = eb.effects
+
+    local custom_effect_bundle = cm:create_new_custom_effect_bundle(eb_key)
+    custom_effect_bundle:set_duration(duration)
+
+    for i = 1, #effects do
+        local fx = effects[i]
+        local key = fx.key
+        local scope = fx.effect_scope
+        local val = fx.value
+
+        custom_effect_bundle:add_effect(key, scope, val)
+    end
+
+    local region_key = self:get_location()
+    local region_obj = cm:get_region(region_key)
+
+    -- apply the EB to the region where the BM is located
+    cm:apply_custom_effect_bundle_to_region(custom_effect_bundle, region_obj)
+
+    -- TODO apply the costs
+    local cost = action_data.cost
+    local gold_cost = cost.gold
+    local food_cost = cost.food
+
+    local faction_key = self:get_faction_key()
+
+    -- remove the gold
+    if is_number(gold_cost) and gold_cost ~= 0 then
+        cm:treasury_mod(faction_key, -gold_cost)
+    end
+
+    if is_number(food_cost) and food_cost ~= 0 then
+        cm:faction_add_pooled_resource(faction_key, "skaven_food", "canibalism", -food_cost)
+    end
 end
 
 function broodmother_obj:assign_random_image()
