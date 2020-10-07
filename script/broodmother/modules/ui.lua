@@ -132,7 +132,6 @@ function ui_obj:set_selected_action(uic)
 end
 
 function ui_obj:get_selected_action()
-    
     return self.selected_action
 end
 
@@ -1120,6 +1119,34 @@ function ui_obj:create_broodmother_column()
     effects_holder:SetImagePath("ui/skins/warhammer2/parchment_divider.png", 1)
 
     -- create the list view for the effects holder :)
+    do
+        local list_view = core:get_or_create_component("list_view", "ui/vandy_lib/hlist", effects_holder)
+        list_view:SetDockingPoint(5)
+        list_view:SetDockOffset(0, 0)
+
+        local w,h = effects_holder:Width() * 0.95, effects_holder:Height() * 0.5
+
+        list_view:SetCanResizeWidth(true) list_view:SetCanResizeHeight(true)
+        list_view:Resize(w,h)
+        list_view:SetCanResizeWidth(false) list_view:SetCanResizeHeight(false)
+
+        local list_clip = find_uicomponent(list_view, "list_clip")
+        list_clip:SetCanResizeWidth(true) list_clip:SetCanResizeHeight(true)
+        list_clip:SetDockingPoint(0)
+        list_clip:SetDockOffset(0, 0)
+        list_clip:Resize(w, h)
+    
+        local list_box = find_uicomponent(list_clip, "list_box")
+        list_box:SetCanResizeWidth(true) list_box:SetCanResizeHeight(true)
+        list_box:SetDockingPoint(2)
+        list_box:SetDockOffset(0, 0)
+        list_box:Resize(w, h)
+    
+        local l_handle = find_uicomponent(list_view, "vslider")
+        l_handle:SetDockingPoint(8)
+        l_handle:SetDockOffset(0, 10)
+    end
+
 
     --[[local div = core:get_or_create_component("div", "ui/templates/custom_image", effects_holder)
     div:SetVisible(true)
@@ -1276,9 +1303,12 @@ function ui_obj:create_context_column()
         perform_button:SetDockingPoint(5)
         perform_button:SetDockOffset(0, 0)
 
-        perform_button:SetState("inactive")
+        perform_button:SetState("active")
 
         local txt = UIComponent(perform_button:Find("button_txt"))
+        txt:SetStateText("Perform")
+
+        perform_button:SetState("inactive")
         txt:SetStateText("Perform")
 
         self:add_listener(
@@ -1375,6 +1405,16 @@ function ui_obj:populate_panel_on_broodmother_selected(slot_num)
     local broodmother_details = find_uicomponent(broodmother_column, "dummy", "broodmother_details")
     local broodmother_title = find_uicomponent(broodmother_details, "broodmother_title", "name")
     local broodmother_location = find_uicomponent(broodmother_details, "broodmother_location")
+
+    local effects_holder = find_uicomponent(broodmother_details, "effects_holder")
+    do
+        local list_box = find_uicomponent(effects_holder, "list_view", "list_clip", "list_box")
+
+        local active_effect = broodmother_obj:get_active_effect()
+        if active_effect then
+            
+        end
+    end
 
     local traits_panel = find_uicomponent(broodmother_column, "traits_panel")
     local list_box = find_uicomponent(traits_panel, "list_view", "list_clip", "list_box")

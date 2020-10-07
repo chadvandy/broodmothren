@@ -24,7 +24,7 @@ function broodmother_obj.new_from_obj(o)
         starvation = 0,
     }
 
-    o.active_effect = ""
+    o.active_effect = nil
 
     return o
 end
@@ -38,7 +38,7 @@ function broodmother_obj.new(faction_key, region_key, base_image)
     new_broodmother.location = region_key
     new_broodmother.traits = {}
     new_broodmother.name = "Broodmother"
-    new_broodmother.active_effect = ""
+    new_broodmother.active_effect = nil
 
     new_broodmother.resources = {
         docile = 0,
@@ -61,7 +61,7 @@ function broodmother_obj:get_active_effect()
 end
 
 function broodmother_obj:set_active_effect(key)
-    if not is_string(key) then
+    if key and not is_string(key) then
         -- errmsg
         return false
     end
