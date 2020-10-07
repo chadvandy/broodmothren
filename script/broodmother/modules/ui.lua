@@ -108,6 +108,34 @@ function ui_obj:add_listener(listener_name, event_name, conditional, callback, i
     )
 end
 
+function ui_obj:set_selected_action(uic)
+    if uic and not is_uicomponent(uic) then
+        -- errmsg, arg provided but it's not a UIC!
+        return false
+    end
+
+    local old_uic = self.selected_action_uic
+    if is_uicomponent(old_uic) then
+        old_uic:SetState("built_panel")
+    end
+
+    if uic then
+        local key = uic:Id()
+        uic:SetState("cannot_build_ever") -- the "selected" looking state
+
+        self.selected_action = key
+        self.selected_action_uic = uic
+    else
+        self.selected_action = ""
+        self.selected_action_uic = nil
+    end
+end
+
+function ui_obj:get_selected_action()
+    
+    return self.selected_action
+end
+
 function ui_obj:open_frame()
     local panel = find_uicomponent(self.panel_name)
 
@@ -125,6 +153,7 @@ function ui_obj:close_frame()
     self:delete_component(panel)
 
     self.hovered_trait = ""
+    self.selected_action = ""
 
     self:clear_listeners()
 end
@@ -196,12 +225,26 @@ function ui_obj:populate_context_menu_on_press(action_key)
 
     end
 
-    -- apply gold/food costs and duration/cooldown timers
-    local deets_holder = find_uicomponent(rites_holder, "deets_holder")
-    local gold_holder = find_uicomponent(deets_holder, "gold_holder")
-    local food_holder = find_uicomponent(deets_holder, "food_holder")
-    local cooldown_holder = find_uicomponent(deets_holder, "cooldown_holder")
-    local duration_holder = find_uicomponent(deets_holder, "duration_holder")
+     -- apply gold/food costs and duration/cooldown timers
+    do
+        local deets_holder = find_uicomponent(rites_holder, "deets_holder")
+        local gold_holder = find_uicomponent(deets_holder, "gold_holder", "dy_cost")
+        local food_holder = find_uicomponent(deets_holder, "food_holder", "dy_cost")
+        local cooldown_holder = find_uicomponent(deets_holder, "cooldown_holder", "dy_cost")
+        local duration_holder = find_uicomponent(deets_holder, "duration_holder", "dy_cost")
+
+        local duration = action.duration
+        local cooldown = 5 -- TODO set this?
+        local costs = action.cost
+        local gold_cost = costs.gold
+        local food_cost = costs.food
+
+        gold_holder:SetStateText(tostring(gold_cost))
+        food_holder:SetStateText(tostring(food_cost))
+
+        cooldown_holder:SetStateText(tostring(cooldown))
+        duration_holder:SetStateText(tostring(duration))
+    end
     
     -- run through the effects list, and apply everything there
     local effects_holder = find_uicomponent(rites_holder, "effects_holder")
@@ -445,6 +488,7 @@ function ui_obj:create_actions_column()
 
         local category_image_path = category_data.img_path
         local category_text_string = effect.get_localised_string(category_data.text_string)
+        local category_tt_string = effect.get_localised_string(category_data.tooltip_string)
 
         --local upgrade_keys = category_data.upgrades
         local action_keys = category_data.actions
@@ -461,12 +505,14 @@ function ui_obj:create_actions_column()
         category_title:SetStateText(category_text_string)
         category_title:SetDockingPoint(2)
         category_title:SetDockOffset(0, 0)
+        category_title:SetTooltipText(category_tt_string, true)
 
         -- create the image for the category
         local category_uic = core:get_or_create_component(category_key.."_img", "ui/templates/custom_image", category_holder)
         category_uic:SetState("custom_state_1")
         category_uic:SetImagePath(category_image_path)
         category_uic:SetVisible(true)
+        category_uic:SetTooltipText(category_tt_string, true)
 
         -- create a border bg behind the category image
         local border_uic = core:get_or_create_component("border", "ui/vandy_lib/custom_image_tiled", category_uic)
@@ -525,6 +571,24 @@ function ui_obj:create_actions_column()
             [4] = 9,
         }
 
+        -- only trigger the hover if no action is pressed
+        self:add_listener(
+            "action_hovered",
+            "ComponentMouseOn",
+            function(context)
+                local uic = UIComponent(context.component)
+                return uicomponent_descended_from(uic, "action_holder") and self.selected_action == ""
+            end,
+            function(context)
+                local key = context.string
+                bmm:log("Action hovered: "..key)
+
+                self:populate_context_menu_on_press(key)
+            end,
+            true
+        )
+
+        -- on click, populates the context menu
         self:add_listener(
             "action_pressed",
             "ComponentLClickUp",
@@ -533,9 +597,20 @@ function ui_obj:create_actions_column()
                 return uicomponent_descended_from(uic, "action_holder")
             end,
             function(context)
+                local action = UIComponent(context.component)
                 local key = context.string
                 bmm:log("Action pressed: "..key)
 
+                -- if action is already pressed, then deselect it
+                if self.selected_action == key then
+                    -- clear off the context menu TODO
+
+                    -- remove saved field
+                    self:set_selected_action()
+                    return
+                end
+
+                self:set_selected_action(action)
                 self:populate_context_menu_on_press(key)
             end,
             true
@@ -552,12 +627,6 @@ function ui_obj:create_actions_column()
             local action_tt = effect.get_localised_string(action_data.tooltip_string)
             local action_img = action_data.img_path
 
-            local duration = action_data.duration
-            local costs = action_data.cost
-
-            local gold_cost = costs.gold
-            local food_cost = costs.food
-
             local action_holder = core:get_or_create_component("action_holder_"..tostring(j), "ui/vandy_lib/script_dummy", actions_holder)
             action_holder:SetDockingPoint(pos)
             action_holder:SetDockOffset(0, 0)
@@ -573,7 +642,14 @@ function ui_obj:create_actions_column()
 
             action_uic:SetImagePath(action_img)
 
-            local keep = {
+            -- replace the "X" with the frame background, so we can use the state "cannot_build_ever" for the "selected" state.
+            local path = effect.get_skinned_image_path("building_frame_plain.png")
+            action_uic:SetImagePath(path, 4)
+
+            -- remove all the unneeded UIC bits
+            action_uic:DestroyChildren()
+
+            --[[local keep = {
                 mouseover_parent = true,
                 food_cost = true,
                 frame_glow = true,
@@ -586,22 +662,22 @@ function ui_obj:create_actions_column()
                     child:SetVisible(false)
                     --self:delete_component(child)
                 --end
-            end
+            end]]
 
-            local mouseover_parent = UIComponent(action_uic:Find("mouseover_parent"))
+            --[[local mouseover_parent = UIComponent(action_uic:Find("mouseover_parent"))
             local turns_center = UIComponent(mouseover_parent:Find("turns_corner"))
 
-            mouseover_parent:SetVisible(true)
-            turns_center:SetVisible(true)
+            mouseover_parent:SetVisible(false)
+            turns_center:SetVisible(false)]]
 
-            turns_center:SetStateText(tostring(duration))
+            --turns_center:SetStateText(tostring(duration))
 
-            turns_center:SetTooltipText("Turns this action will be active. Only one action can be active at a time!", true)
+            --turns_center:SetTooltipText("Turns this action will be active. Only one action can be active at a time!", true)
 
-            local upgrade_box = UIComponent(mouseover_parent:Find("upgrade-box"))
-            local gold_uic = UIComponent(upgrade_box:Find("building_cost"))
+            --local upgrade_box = UIComponent(mouseover_parent:Find("upgrade-box"))
+            --local gold_uic = UIComponent(upgrade_box:Find("building_cost"))
 
-            do
+            --[[do
                 local x,y = gold_uic:GetDockOffset()
                 y = y + 15
                 gold_uic:SetDockOffset(x, y)
@@ -629,7 +705,7 @@ function ui_obj:create_actions_column()
             food_uic:SetImagePath("ui/skins/default/skaven_food_icon.png")
 
             -- TODO temp disbable
-            food_uic:SetVisible(false)
+            food_uic:SetVisible(false)]]
         end
 
         --[[local upgrades_prototype = bmm:get_upgrade_prototype()
@@ -921,10 +997,13 @@ function ui_obj:create_broodmother_column()
 
         starvation:SetDockingPoint(5)
 
+        starvation:SetInteractive(true)
+        starvation:SetTooltipText("Starvation Is currently: [ph]", true)
+
         local submission_holder = core:get_or_create_component("submission", "ui/vandy_lib/script_dummy", resources_holder)
         submission_holder:Resize(resources_holder:Width() * 0.4, resources_holder:Height())
         submission_holder:SetDockingPoint(6)
-        submission_holder:SetDockOffset(-(resources_holder:Width() * 0.18), 0)
+        submission_holder:SetDockOffset(resources_holder:Width() * -0.18, 0)
 
         local submission = core:get_or_create_component("icon", "ui/templates/custom_image", submission_holder)
         submission:SetVisible(true)
@@ -935,6 +1014,9 @@ function ui_obj:create_broodmother_column()
         submission:Resize(submission_holder:Height() * 0.8, submission_holder:Height() * 0.8)
 
         submission:SetDockingPoint(5)
+
+        submission:SetInteractive(true)
+        submission:SetTooltipText("Submission is currently: [PH]", true)
 
         
     bmm:log("test 9")
@@ -1489,6 +1571,9 @@ function ui_obj:create_panel()
     -- add it - the ui/vandy_lib/frame is a UIC layout file, based off of the Graphics Options frame
     local panel = core:get_or_create_component(self.panel_name, "ui/vandy_lib/frame")
     panel:SetVisible(true)
+
+    -- lock the UI behind (so no scrolling or NOTHIN)
+    panel:LockPriority()
 
     -- resize the panel
     local sx, sy = core:get_screen_resolution()
